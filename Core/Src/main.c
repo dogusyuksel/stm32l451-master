@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "i2c.h"
 #include "rng.h"
 #include "spi.h"
 #include "usart.h"
@@ -94,6 +95,7 @@ int main(void)
   MX_RNG_Init();
   MX_USART1_UART_Init();
   MX_SPI1_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
