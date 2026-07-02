@@ -55,6 +55,7 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern RNG_HandleTypeDef hrng;
 extern TIM_HandleTypeDef htim16;
 
 /* USER CODE BEGIN EV */
@@ -171,6 +172,20 @@ void TIM1_UP_TIM16_IRQHandler(void)
   /* USER CODE BEGIN TIM1_UP_TIM16_IRQn 1 */
 
   /* USER CODE END TIM1_UP_TIM16_IRQn 1 */
+}
+
+/**
+  * @brief This function handles RNG global interrupt.
+  */
+void RNG_IRQHandler(void)
+{
+  /* USER CODE BEGIN RNG_IRQn 0 */
+
+  /* USER CODE END RNG_IRQn 0 */
+  HAL_RNG_IRQHandler(&hrng);
+  /* USER CODE BEGIN RNG_IRQn 1 */
+
+  /* USER CODE END RNG_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
