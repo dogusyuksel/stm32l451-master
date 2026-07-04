@@ -25,11 +25,16 @@ void custom_uart_interrupt_handler(uint8_t byte) {
 void custom_uart_handler(uint32_t current_tick) {
   if (uart_buffer_index > 0 && (current_tick - last_data_tick) >= UART_RX_TIMEOUT_MS) {
     // Process the received data
-    log_debug("Received UART data: ");
-    for (uint32_t i = 0; i < uart_buffer_index; i++) {
-      log_debug("%02X ", uart_buffer[i]);
+    if (strstr((char *)uart_buffer, "trigger_fault")) {
+      // just tp show backtrace is working
+      __asm volatile(".word 0xFFFFFFFF");
+    } else {
+      log_debug("Received UART data: ");
+      for (uint32_t i = 0; i < uart_buffer_index; i++) {
+        log_debug("%02X ", uart_buffer[i]);
+      }
+      log_debug("\n\r");
     }
-    log_debug("\n\r");
 
     // Reset the buffer index after processing
     uart_buffer_index = 0;

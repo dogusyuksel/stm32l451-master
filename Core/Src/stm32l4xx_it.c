@@ -22,6 +22,7 @@
 #include "stm32l4xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "cm_backtrace.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -63,7 +64,13 @@ extern UART_HandleTypeDef huart1;
 extern TIM_HandleTypeDef htim16;
 
 /* USER CODE BEGIN EV */
+void Custom_Handler(uint32_t fault_handler_lr, uint32_t fault_handler_sp) {
+  cm_backtrace_fault(fault_handler_lr, fault_handler_sp);
 
+  while (1) {
+      __NOP();
+  }
+}
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -90,7 +97,11 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
-
+  asm volatile(" MOV     r0, lr  \n" /* get lr */
+                " MOV     r1, sp  \n" /* get stack pointer (current is MSP) */
+                " BL      %0      \n"
+                :
+                : "i"(Custom_Handler));
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
@@ -120,7 +131,11 @@ void MemManage_Handler(void)
 void BusFault_Handler(void)
 {
   /* USER CODE BEGIN BusFault_IRQn 0 */
-
+  asm volatile(" MOV     r0, lr  \n" /* get lr */
+                " MOV     r1, sp  \n" /* get stack pointer (current is MSP) */
+                " BL      %0      \n"
+                :
+                : "i"(Custom_Handler));
   /* USER CODE END BusFault_IRQn 0 */
   while (1)
   {
@@ -135,7 +150,11 @@ void BusFault_Handler(void)
 void UsageFault_Handler(void)
 {
   /* USER CODE BEGIN UsageFault_IRQn 0 */
-
+  asm volatile(" MOV     r0, lr  \n" /* get lr */
+                " MOV     r1, sp  \n" /* get stack pointer (current is MSP) */
+                " BL      %0      \n"
+                :
+                : "i"(Custom_Handler));
   /* USER CODE END UsageFault_IRQn 0 */
   while (1)
   {

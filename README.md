@@ -48,9 +48,13 @@ target remote localhost:333
 bt full
 ```
 
+## External Library Changes
+
+Please follow 'CUSTOM_CHANGES'
+
 ## License
 
 My software is free to use (no license) but you should also check dependent projects' licenses as well.
 
 1. https://github.com/mpaland/printf/blob/master/LICENSE
-
+2. https://github.com/armink/CmBacktrace/blob/master/LICENSE
