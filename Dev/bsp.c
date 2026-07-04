@@ -7,6 +7,7 @@
 #include "main.h"
 #include "usart.h"
 #include "rng.h"
+#include "spi.h"
 #include "logging.h"
 #include "stm32l4xx_hal.h"
 
@@ -45,8 +46,67 @@ static void RNG_test(void) {
   }
 }
 
+#define BLS_CODE_MDID 0x9F /**< Manufacturer Device ID */
+#define BLS_CODE_DP 0xB9  /**< Power down */
+#define BLS_CODE_RDP 0xAB /**< Power standby */
+
+static void extFlashSelect(void) {
+  HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_RESET);
+}
+
+static void extFlashDeselect(void) {
+  HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_SET);
+}
+
+static int extFlashPowerStandby(void) {
+  uint8_t cmd = BLS_CODE_RDP;
+  int ret = HAL_ERROR;
+
+  extFlashSelect();
+  ret = HAL_SPI_Transmit(&hspi1, &cmd, 1, 200);
+  extFlashDeselect();
+
+  return ret;
+}
+
+static int ExtFlash_readInfo(void) {
+  int ret = HAL_OK;
+
+  uint8_t tx_buf[4] = { BLS_CODE_MDID, 0x00, 0x00, 0x00 }; // 1 command + 3 dummy
+  uint8_t rx_buf[4] = {0};
+  extFlashSelect();
+  HAL_SPI_TransmitReceive(&hspi1, tx_buf, rx_buf, 4, 200);
+  extFlashDeselect();
+
+  log_debug("spi1 rx_buf: %X %X %X\r\n",
+        rx_buf[1], rx_buf[2], rx_buf[3]);
+
+  return ret;
+}
+
+static int extFlashPowerDown(void) {
+  uint8_t cmd = BLS_CODE_DP;
+  int ret = HAL_ERROR;
+
+  extFlashSelect();
+  ret = HAL_SPI_Transmit(&hspi1, &cmd, 1, 200);
+  extFlashDeselect();
+
+  return ret;
+}
+
 void board_periodic_task(void *argument) {
   static uint32_t led_toggle_counter = 0;
+
+  /* Put the part is standby mode */
+  extFlashPowerStandby();
+  osDelay(20);
+  /* Verify manufacturer and device ID */
+  ExtFlash_readInfo();
+  osDelay(20);
+  // Put the part in low power mode
+  extFlashPowerDown();
+
   /* Infinite loop */
   for(;;)
   {

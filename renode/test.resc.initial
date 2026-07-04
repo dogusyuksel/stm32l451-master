@@ -21,6 +21,8 @@ machine LoadPlatformDescription @<<<<<WORKSPACE>>>>>/renode/test.repl
 # Configure some logging
 showAnalyzer usart1
 logLevel -1 gpioa.UserLed
+logLevel -1 gpioa.CHIP_SELECT
+logLevel -1 sysbus.spi1.MX25R
 
 # Allow us to connect to our UART from the host machine: telnet localhost 1234
 emulation CreateServerSocketTerminal 1234 "uart_terminal" false
