@@ -9,6 +9,7 @@ include "<<<<<WORKSPACE>>>>>/renode/CANHUB.cs"
 include "<<<<<WORKSPACE>>>>>/renode/CS.cs"
 include "<<<<<WORKSPACE>>>>>/renode/USERLED.cs"
 include "<<<<<WORKSPACE>>>>>/renode/BUTTON.cs"
+include "<<<<<WORKSPACE>>>>>/renode/STM32_RNG.cs"
 
 # Create your machine to model
 using sysbus
