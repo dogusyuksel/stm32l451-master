@@ -116,7 +116,7 @@ void board_periodic_task(void *argument) {
   HAL_I2C_Master_Transmit(&hi2c1, 0x6B << 1, buf, 2, 300);
   HAL_I2C_Master_Receive(&hi2c1, 0x6B << 1, &chipID, 1, 300);
 
-  log_debug("i2c1, BM180 chipID: %u\n", chipID);
+  log_debug("i2c1, BMA180 chipID: %u\n", chipID);
 
   /* Infinite loop */
   for(;;)
