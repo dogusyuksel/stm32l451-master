@@ -25,7 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "uart_handlers.h"
+#include "bsp.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -120,12 +120,7 @@ void MX_FREERTOS_Init(void) {
 void StartPeriodicTask(void *argument)
 {
   /* USER CODE BEGIN StartPeriodicTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    custom_uart_handler(osKernelGetTickCount());
-    osDelay(UART_RX_TIMEOUT_MS);
-  }
+  board_periodic_task(argument);
   /* USER CODE END StartPeriodicTask */
 }
 

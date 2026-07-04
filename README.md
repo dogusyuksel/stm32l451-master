@@ -47,3 +47,10 @@ arm-none-eabi-gdb build/stm32l451-master.elf
 target remote localhost:333
 bt full
 ```
+
+## License
+
+My software is free to use (no license) but you should also check dependent projects' licenses as well.
+
+1. https://github.com/mpaland/printf/blob/master/LICENSE
+

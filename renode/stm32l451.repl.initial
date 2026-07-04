@@ -137,6 +137,23 @@ i2c4: I2C.STM32L4_I2C @ sysbus 0x40008400
 can1: CAN.STMCAN @ sysbus <0x40006400, +0x400>
     [0-3] -> nvic@[19-22]
 
+exti: IRQControllers.STM32F4_EXTI @ sysbus 0x40010400
+    numberOfOutputLines: 19
+    [0-4] -> nvic@[6-10]
+    [5-9] -> nvicInput23@[0-4]
+    [10-15] -> nvicInput40@[0-5]
+
+nvicInput23: Miscellaneous.CombinedInput @ none
+    numberOfInputs: 5
+    -> nvic@23
+
+nvicInput40: Miscellaneous.CombinedInput @ none
+    numberOfInputs: 6
+    -> nvic@40
+
+// afio: GPIOPort.STM32F1AFIO @ sysbus 0x40010000
+//     gpioPorts: [gpioa, gpiob, gpioc, gpioh]
+//     [0-15] -> exti@[0-15]
 
 // Controller??
 flashController: MTD.STM32F4_FlashController @ {

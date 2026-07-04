@@ -92,15 +92,15 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-#ifndef RENODE_BUILD
-  // enable one by one later
   MX_GPIO_Init();
+  MX_USART1_UART_Init();
+#ifndef RENODE_BUILD
+  // TODO enable later
   MX_RNG_Init();
   MX_SPI1_Init();
   MX_I2C1_Init();
   MX_CAN1_Init();
 #endif
-  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   board_init();
   /* USER CODE END 2 */
