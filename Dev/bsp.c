@@ -8,6 +8,7 @@
 #include "usart.h"
 #include "rng.h"
 #include "spi.h"
+#include "i2c.h"
 #include "logging.h"
 #include "stm32l4xx_hal.h"
 
@@ -106,6 +107,16 @@ void board_periodic_task(void *argument) {
   osDelay(20);
   // Put the part in low power mode
   extFlashPowerDown();
+
+  uint8_t buf[2];
+  uint8_t chipID = 0;
+  buf[0] = 0xFC; // SendingData state
+  buf[1] = 0x00; // Chip ID register
+
+  HAL_I2C_Master_Transmit(&hi2c1, 0x6B << 1, buf, 2, 300);
+  HAL_I2C_Master_Receive(&hi2c1, 0x6B << 1, &chipID, 1, 300);
+
+  log_debug("i2c1, BMA180 chipID: %u\n", chipID);
 
   /* Infinite loop */
   for(;;)
