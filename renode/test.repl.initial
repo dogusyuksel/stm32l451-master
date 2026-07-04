@@ -1,2 +1,10 @@
 using "<<<<<WORKSPACE>>>>>/renode/stm32l451.repl"
 
+UserLed: Antmicro.Renode.Peripherals.Miscellaneous.USERLED @ gpioa
+
+gpioa:
+    11 -> UserLed@0
+    12 -> exti@12
+
+UserButton: Antmicro.Renode.Peripherals.Miscellaneous.BUTTON @ gpioa
+    -> gpioa@12

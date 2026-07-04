@@ -8,6 +8,7 @@ include "<<<<<WORKSPACE>>>>>/renode/LOGGER_SPI.cs"
 include "<<<<<WORKSPACE>>>>>/renode/CANHUB.cs"
 include "<<<<<WORKSPACE>>>>>/renode/CS.cs"
 include "<<<<<WORKSPACE>>>>>/renode/USERLED.cs"
+include "<<<<<WORKSPACE>>>>>/renode/BUTTON.cs"
 
 # Create your machine to model
 using sysbus
@@ -18,6 +19,7 @@ machine LoadPlatformDescription @<<<<<WORKSPACE>>>>>/renode/test.repl
 
 # Configure some logging
 showAnalyzer usart1
+logLevel -1 gpioa.UserLed
 
 # Allow us to connect to our UART from the host machine: telnet localhost 1234
 emulation CreateServerSocketTerminal 1234 "uart_terminal" false
@@ -33,3 +35,5 @@ macro reset
 
 runMacro $reset
 start
+
+sysbus.gpioa.UserButton PressAndRelease

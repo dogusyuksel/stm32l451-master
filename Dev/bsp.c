@@ -18,6 +18,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
     }
 }
 
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+  if (GPIO_Pin == BUTTON_Pin) {
+    log_debug("Button Pressed!\n\r");
+  }
+}
+
 static void uart_send(uint8_t *buffer, uint32_t len) {
   HAL_UART_Transmit(&huart1, (uint8_t *)buffer, len, len);
 }
@@ -27,4 +33,18 @@ void board_init(void) {
 
   logging_init(uart_send, LEVEL_DEBUG);
   log_debug("Board initialized\n\r");
+}
+
+void board_periodic_task(void *argument) {
+  static uint32_t led_toggle_counter = 0;
+  /* Infinite loop */
+  for(;;)
+  {
+    custom_uart_handler(osKernelGetTickCount());
+    osDelay(UART_RX_TIMEOUT_MS);
+
+    if ((++(led_toggle_counter) % 10) == 1) {
+      HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+    }
+  }
 }
