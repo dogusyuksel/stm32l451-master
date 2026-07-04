@@ -16,6 +16,13 @@ mach create $name
 machine LoadPlatformDescription @<<<<<WORKSPACE>>>>>/renode/test.repl
 # sysbus.cpu LogFunctionNames true
 
+# Configure some logging
+showAnalyzer usart1
+
+# Allow us to connect to our UART from the host machine: telnet localhost 1234
+emulation CreateServerSocketTerminal 1234 "uart_terminal" false
+connector Connect sysbus.usart1 uart_terminal
+
 machine StartGdbServer 3333 true
 
 # Define a macro to perform a reset`
