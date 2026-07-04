@@ -18,3 +18,5 @@ MX25R: Antmicro.Renode.Peripherals.SPI.Macronix_MX25R  @ spi1
 CHIP_SELECT: Antmicro.Renode.Peripherals.Miscellaneous.CS @ gpioa
 gpioa:
     2 -> CHIP_SELECT@0
+
+BMA180: Antmicro.Renode.Peripherals.I2C.BMA180 @ i2c1 0x6B
