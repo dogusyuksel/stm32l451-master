@@ -6,14 +6,18 @@ enable_language(C ASM)
 set(Dev_Include_Dirs
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/logging/inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/cm_backtrace/Languages/en-US
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/cm_backtrace
 )
 
 # developercore generated application sources
 set(Dev_Application_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/bsp.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/uart_handlers.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/freertos_over.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/logging/src/printf.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/logging/src/logging.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/cm_backtrace/cm_backtrace.c
 )
 
 # Link directories setup

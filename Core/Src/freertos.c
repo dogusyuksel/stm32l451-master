@@ -50,7 +50,7 @@ typedef StaticTask_t osStaticThreadDef_t;
 /* USER CODE END Variables */
 /* Definitions for periodicTask */
 osThreadId_t periodicTaskHandle;
-uint32_t periodicTaskBuffer[ 512 ];
+uint32_t periodicTaskBuffer[ 2048 ];
 osStaticThreadDef_t periodicTaskControlBlock;
 const osThreadAttr_t periodicTask_attributes = {
   .name = "periodicTask",

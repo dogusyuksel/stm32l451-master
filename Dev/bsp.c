@@ -11,6 +11,7 @@
 #include "i2c.h"
 #include "logging.h"
 #include "stm32l4xx_hal.h"
+#include "cm_backtrace.h"
 
 static uint8_t uart1_rx_byte;
 
@@ -35,6 +36,9 @@ void board_init(void) {
   HAL_UART_Receive_IT(&huart1, (uint8_t *)&uart1_rx_byte, 1); // arm uart it
 
   logging_init(uart_send, LEVEL_DEBUG);
+
+  cm_backtrace_init("stm32l451-master", "NA", VERSION);
+
   log_debug("Board initialized\n\r");
 }
 
@@ -124,11 +128,11 @@ void board_periodic_task(void *argument) {
     custom_uart_handler(osKernelGetTickCount());
     osDelay(UART_RX_TIMEOUT_MS);
 
-    if ((++(led_toggle_counter) % 10) == 1) {
+    if ((++(led_toggle_counter) % 50) == 1) {
       HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
     }
 
-    if (led_toggle_counter % 50 == 1) {
+    if (led_toggle_counter % 100 == 1) {
       RNG_test();
     }
   }
