@@ -1,6 +1,9 @@
 # custom items
 .vscode/
 build/
+renode/stm32l451.repl
+renode/test.repl
+renode/test.resc
 
 # Prerequisites
 *.d

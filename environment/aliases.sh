@@ -19,6 +19,9 @@ alias build_fw_in_docker_renode="docker run --rm -t --net=host -v \"$SCRIPT_DIR\
 alias build_fw_linux="cd $SCRIPT_DIR/.. && rm -rf build && mkdir build && cd build && cmake --preset=Linux .. && make && cd -"
 alias build_fw_linux_renode="cd $SCRIPT_DIR/.. && rm -rf build && mkdir build && cd build && cmake --preset=Linux_Renode .. && make && cd -"
 
+alias start_renode_machine_in_docker="docker run --rm -t --net=host -v \"$SCRIPT_DIR\"/..:\"$DOCKER_WORKINGDIR\" --entrypoint=/bin/bash \"$DOCKER_IMAGE_NAME\" -c \"cd $DOCKER_WORKINGDIR/renode && python3 generate.py && renode -e 'start @test.resc' && cd -\""
+alias start_renode_machine_linux="cd $SCRIPT_DIR/../renode && python3 generate.py && renode -e 'start @test.resc' && cd -"
+
 # ==========================
 # Welcome Message
 # ==========================

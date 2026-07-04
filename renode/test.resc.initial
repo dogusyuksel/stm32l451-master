@@ -1,0 +1,28 @@
+$name?="test_machine"
+
+#Include some custom model here
+include "<<<<<WORKSPACE>>>>>/renode/LOGGER_I2C.cs"
+include "<<<<<WORKSPACE>>>>>/renode/STM32L4_RCC.cs"
+include "<<<<<WORKSPACE>>>>>/renode/STML4_I2C.cs"
+include "<<<<<WORKSPACE>>>>>/renode/LOGGER_SPI.cs"
+include "<<<<<WORKSPACE>>>>>/renode/CANHUB.cs"
+include "<<<<<WORKSPACE>>>>>/renode/CS.cs"
+include "<<<<<WORKSPACE>>>>>/renode/USERLED.cs"
+
+# Create your machine to model
+using sysbus
+mach create $name
+
+machine LoadPlatformDescription @<<<<<WORKSPACE>>>>>/renode/test.repl
+# sysbus.cpu LogFunctionNames true
+
+machine StartGdbServer 3333 true
+
+# Define a macro to perform a reset`
+macro reset
+"""
+    sysbus LoadELF @<<<<<WORKSPACE>>>>>/build/stm32l451-master.elf
+"""
+
+runMacro $reset
+start
