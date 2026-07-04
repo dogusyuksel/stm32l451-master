@@ -8,3 +8,13 @@ gpioa:
 
 UserButton: Antmicro.Renode.Peripherals.Miscellaneous.BUTTON @ gpioa
     -> gpioa@12
+
+flashMem: Memory.MappedMemory
+    size: 0x100000
+
+MX25R: Antmicro.Renode.Peripherals.SPI.Macronix_MX25R  @ spi1
+    underlyingMemory: flashMem
+
+CHIP_SELECT: Antmicro.Renode.Peripherals.Miscellaneous.CS @ gpioa
+gpioa:
+    2 -> CHIP_SELECT@0
