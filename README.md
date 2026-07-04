@@ -25,3 +25,25 @@ If you are a Windows user, use the below command (note that, I am now a Windows 
 ```
 .\environment\build.bat
 ```
+
+## How To Test (Renode)
+
+First, you need to build your project with RENODE flag enabled than you should start renode machine.
+
+```
+source environment/aliases.sh
+
+build_fw_linux_renode // for linux
+build_fw_in_docker_renode // for docker
+
+start_renode_machine_linux // for linux
+start_renode_machine_in_docker // for docker
+```
+
+To use GDB with Renode
+
+```
+arm-none-eabi-gdb build/stm32l451-master.elf
+target remote localhost:333
+bt full
+```

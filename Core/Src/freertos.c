@@ -25,7 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "uart_handlers.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -123,7 +123,8 @@ void StartPeriodicTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    custom_uart_handler(osKernelGetTickCount());
+    osDelay(UART_RX_TIMEOUT_MS);
   }
   /* USER CODE END StartPeriodicTask */
 }
