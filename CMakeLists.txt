@@ -24,6 +24,12 @@ set(CMAKE_PROJECT_NAME stm32l451-master)
 # Enable compile command to ease indexing with e.g. clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
+if(MY_ACTIVE_PRESET MATCHES "Linux")
+    set(CMAKE_TOOLCHAIN_FILE
+        ${CMAKE_SOURCE_DIR}/cmake/gcc-arm-none-eabi.cmake
+        CACHE STRING "Toolchain file")
+endif()
+
 # Core project settings
 project(${CMAKE_PROJECT_NAME})
 message("Build type: " ${CMAKE_BUILD_TYPE})
@@ -51,6 +57,12 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
 )
+
+if(MY_ACTIVE_PRESET STREQUAL "Linux_Renode")
+    target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
+        RENODE_BUILD
+    )
+endif()
 
 # Add project symbols (macros)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE

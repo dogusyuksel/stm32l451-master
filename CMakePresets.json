@@ -23,6 +23,18 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
+        },
+        {
+            "name": "Linux",
+            "cacheVariables": {
+                "MY_ACTIVE_PRESET": "Linux"
+            }
+        },
+        {
+            "name": "Linux_Renode",
+            "cacheVariables": {
+                "MY_ACTIVE_PRESET": "Linux_Renode"
+            }
         }
     ],
     "buildPresets": [
@@ -33,6 +45,14 @@
         {
             "name": "Release",
             "configurePreset": "Release"
+        },
+        {
+            "name": "Linux",
+            "configurePreset": "Linux"
+        },
+        {
+            "name": "Linux_Renode",
+            "configurePreset": "Linux_Renode"
         }
     ]
 }
