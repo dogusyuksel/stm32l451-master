@@ -6,6 +6,7 @@
 #include "uart_handlers.h"
 #include "main.h"
 #include "usart.h"
+#include "rng.h"
 #include "logging.h"
 #include "stm32l4xx_hal.h"
 
@@ -35,6 +36,15 @@ void board_init(void) {
   log_debug("Board initialized\n\r");
 }
 
+static void RNG_test(void) {
+  uint32_t random_value = 0;
+  if (HAL_RNG_GenerateRandomNumber(&hrng, &random_value) == HAL_OK) {
+      log_debug("RNG: %lu\r\n", random_value);
+  } else {
+      log_debug("RNG ERROR\r\n");
+  }
+}
+
 void board_periodic_task(void *argument) {
   static uint32_t led_toggle_counter = 0;
   /* Infinite loop */
@@ -45,6 +55,10 @@ void board_periodic_task(void *argument) {
 
     if ((++(led_toggle_counter) % 10) == 1) {
       HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+    }
+
+    if (led_toggle_counter % 50 == 1) {
+      RNG_test();
     }
   }
 }
