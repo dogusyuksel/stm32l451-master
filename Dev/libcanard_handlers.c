@@ -31,12 +31,13 @@ const osThreadAttr_t libcanardTask_attributes = {
 
 void StartlibcanardTask(void *argument)
 {
+  uavcanInit();
+
   for(;;) {
-    log_debug("libcanard task running...\n\r");
     sendCanard();
     receiveCanard();
     spinCanard();
-    osDelay(LIBCANARD_LOOP_DELAY);
+    osDelay(CANARD_SPIN_PERIOD);
   }
 }
 
@@ -280,8 +281,6 @@ void spinCanard(void) {
                                    NODES_NODE2_NODEPING_ID, &transfer_id,
                                    CANARD_TRANSFER_PRIORITY_LOW, buf_ping, len);
   if (bc_res < 0) {
-    log_debug("broadcast failed\n)");
-  } else {
-    log_debug("broadcast sent\n");
+    log_debug("broadcast failed: %d\n)", bc_res);
   }
 }

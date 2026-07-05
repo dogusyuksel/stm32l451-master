@@ -44,8 +44,15 @@ To use GDB with Renode
 
 ```
 arm-none-eabi-gdb build/stm32l451-master.elf
-target remote localhost:333
+target remote localhost:3333
 bt full
+```
+
+To test CANBUS, you should create a virtual can interface, like below
+
+```
+sudo ip link add dev "can0" type vcan
+sudo ip link set up "can0"
 ```
 
 ## External Library Notes

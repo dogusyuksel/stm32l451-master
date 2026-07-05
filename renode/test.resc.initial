@@ -31,7 +31,7 @@ emulation CreateServerSocketTerminal 1234 "uart_terminal" false
 connector Connect sysbus.usart1 uart_terminal
 
 emulation CreateCANHub "canHub"
-machine CreateSocketCANBridge "socketcan" "vcan0"
+machine CreateSocketCANBridge "socketcan" "can0"
 connector Connect socketcan canHub
 connector Connect sysbus.can1 canHub
 
