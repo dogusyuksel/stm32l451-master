@@ -28,6 +28,7 @@ set(Dev_Application_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/cm_backtrace/cm_backtrace.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/libcanard/canard.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/libcanard/drivers/stm32/canard_stm32.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/libcanard_handlers.c
 )
 
 # Link directories setup

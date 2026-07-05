@@ -123,8 +123,7 @@ void board_periodic_task(void *argument) {
   log_debug("i2c1, BMA180 chipID: %u\n", chipID);
 
   /* Infinite loop */
-  for(;;)
-  {
+  for(;;) {
     custom_uart_handler(osKernelGetTickCount());
     osDelay(UART_RX_TIMEOUT_MS);
 
