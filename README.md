@@ -44,13 +44,23 @@ To use GDB with Renode
 
 ```
 arm-none-eabi-gdb build/stm32l451-master.elf
-target remote localhost:333
+target remote localhost:3333
 bt full
 ```
 
-## External Library Changes
+To test CANBUS, you should create a virtual can interface, like below
 
-Please follow 'CUSTOM_CHANGES'
+```
+sudo ip link add dev "can0" type vcan
+sudo ip link set up "can0"
+```
+
+## External Library Notes
+
+Please follow 'CUSTOM_CHANGES' to see custom changes on external sources.
+
+To use can2 instead of can1 for libcanard, use 'CANARD_STM32_USE_CAN2' define.
+
 
 ## License
 
@@ -58,3 +68,4 @@ My software is free to use (no license) but you should also check dependent proj
 
 1. https://github.com/mpaland/printf/blob/master/LICENSE
 2. https://github.com/armink/CmBacktrace/blob/master/LICENSE
+3. https://github.com/OpenCyphal/libcanard/blob/master/LICENSE

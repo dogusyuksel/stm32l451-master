@@ -8,6 +8,9 @@ set(Dev_Include_Dirs
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/logging/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/cm_backtrace/Languages/en-US
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/cm_backtrace
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/libcanard
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/libcanard/drivers/stm32
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/libcanard_auto_generated
 )
 
 # developercore generated application sources
@@ -18,6 +21,9 @@ set(Dev_Application_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/logging/src/printf.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/logging/src/logging.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/cm_backtrace/cm_backtrace.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/libcanard/canard.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/libcanard/drivers/stm32/canard_stm32.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/libcanard_handlers.c
 )
 
 # Link directories setup
