@@ -53,10 +53,29 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
 )
 
-# Add include paths
-target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
-    # Add user defined include paths
+# =========================
+# CSP CONFIGURATION
+# =========================
+
+set(LIBCSP_DIR ${CMAKE_SOURCE_DIR}/Dev/libcspv2)
+
+# be careful about below settings, should match with other end
+add_custom_target(libcsp_build ALL
+    COMMAND ./waf configure
+        --with-os=freertos 
+        --toolchain=arm-none-eabi- 
+        --with-max-bind-port 32 
+        --enable-promisc 
+        --enable-rtable 
+        --includes 
+            ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2,${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/include,${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F,${CMAKE_SOURCE_DIR}/Core/Inc
+    COMMAND ./waf build
+    WORKING_DIRECTORY ${LIBCSP_DIR}
+    COMMENT "Building libcsp2 with waf..."
 )
+add_dependencies(${CMAKE_PROJECT_NAME} libcsp_build)
+
+# =========================
 
 if(MY_ACTIVE_PRESET STREQUAL "Linux_Renode")
     target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
@@ -64,6 +83,7 @@ if(MY_ACTIVE_PRESET STREQUAL "Linux_Renode")
     )
 endif()
 
+# CAN/DSDL generation
 set(GENERATED_DIR ${CMAKE_SOURCE_DIR}/Dev/libcanard_auto_generated)
 
 set(GENERATED_SOURCES
@@ -102,4 +122,5 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 
     # Add user defined libraries
     developercore
+    # csp
 )

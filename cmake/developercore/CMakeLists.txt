@@ -2,8 +2,15 @@ cmake_minimum_required(VERSION 3.22)
 # Enable CMake support for ASM and C languages
 enable_language(C ASM)
 
+set(LIBCSP_DIR ${CMAKE_SOURCE_DIR}/Dev/libcspv2)
+set(LIBCSP_INCLUDE ${LIBCSP_DIR}/include)
+set(LIBCSP_CONF_INCLUDE ${LIBCSP_DIR}/build/include)
+set(LIBCSP_LIB ${LIBCSP_DIR}/build/libcsp.a)
+
 # developercore generated include paths
 set(Dev_Include_Dirs
+    ${LIBCSP_CONF_INCLUDE}
+    ${LIBCSP_INCLUDE}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/logging/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/cm_backtrace/Languages/en-US
@@ -33,7 +40,7 @@ set(MX_LINK_DIRS
 # Project static libraries
 set(MX_LINK_LIBS 
     ${TOOLCHAIN_LINK_LIBRARIES}
-	
+	${LIBCSP_LIB}
 )
 # Interface library for includes and symbols
 add_library(developercore INTERFACE)
