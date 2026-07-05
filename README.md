@@ -48,9 +48,12 @@ target remote localhost:333
 bt full
 ```
 
-## External Library Changes
+## External Library Notes
 
-Please follow 'CUSTOM_CHANGES'
+Please follow 'CUSTOM_CHANGES' to see custom changes on external sources.
+
+To use can2 instead of can1 for libcanard, use 'CANARD_STM32_USE_CAN2' define.
+
 
 ## License
 

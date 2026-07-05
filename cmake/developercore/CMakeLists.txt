@@ -13,13 +13,8 @@ set(Dev_Include_Dirs
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/libcanard_auto_generated
 )
 
-file(GLOB_RECURSE generated_files
-     "${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/libcanard_auto_generated/*.c"
-)
-
 # developercore generated application sources
 set(Dev_Application_Src
-    ${generated_files}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/bsp.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/uart_handlers.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/freertos_over.c
