@@ -61,6 +61,8 @@ Please follow 'CUSTOM_CHANGES' to see custom changes on external sources.
 
 To use can2 instead of can1 for libcanard, use 'CANARD_STM32_USE_CAN2' define.
 
+For more detail about uavcan (legacy libcanard): https://legacy.uavcan.org/Specification/1._Introduction/
+
 
 ## License
 
@@ -69,3 +71,4 @@ My software is free to use (no license) but you should also check dependent proj
 1. https://github.com/mpaland/printf/blob/master/LICENSE
 2. https://github.com/armink/CmBacktrace/blob/master/LICENSE
 3. https://github.com/OpenCyphal/libcanard/blob/master/LICENSE
+4. https://github.com/libcsp/libcsp/blob/develop/LICENSE
