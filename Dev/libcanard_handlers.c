@@ -260,8 +260,9 @@ void receiveCanard(void) {
 
 void spinCanard(void) {
   static uint32_t spin_time = 0;
-  if (osKernelGetTickCount() < spin_time + CANARD_SPIN_PERIOD)
+  if (osKernelGetTickCount() < (spin_time + CANARD_SPIN_PERIOD)) {
     return; // rate limiting
+  }
   spin_time = osKernelGetTickCount();
 
   // send the response
@@ -280,5 +281,7 @@ void spinCanard(void) {
                                    CANARD_TRANSFER_PRIORITY_LOW, buf_ping, len);
   if (bc_res < 0) {
     log_debug("broadcast failed\n)");
+  } else {
+    log_debug("broadcast sent\n");
   }
 }
