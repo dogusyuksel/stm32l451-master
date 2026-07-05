@@ -27,7 +27,7 @@ uint8_t hal_can_write(CAN_HandleTypeDef *can, uint32_t addr, uint8_t *data, uint
 
 typedef StaticTask_t osStaticThreadDef_t;
 
-osThreadId_t libcsp2TaskHandle, libcsp2RouteHandle;
+osThreadId_t libcsp2TaskHandle;
 uint32_t libcsp2TaskBuffer[ 2048 ];
 osStaticThreadDef_t libcsp2TaskControlBlock;
 const osThreadAttr_t libcsp2Task_attributes = {
@@ -36,7 +36,19 @@ const osThreadAttr_t libcsp2Task_attributes = {
   .cb_size = sizeof(libcsp2TaskControlBlock),
   .stack_mem = &libcsp2TaskBuffer[0],
   .stack_size = sizeof(libcsp2TaskBuffer),
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityAboveNormal,
+};
+
+osThreadId_t libcsp2RouteHandle;
+uint32_t routerTaskBuffer[ 512 ];
+osStaticThreadDef_t routerTaskControlBlock;
+const osThreadAttr_t routerTask_attributes = {
+  .name = "routerTask",
+  .cb_mem = &routerTaskControlBlock,
+  .cb_size = sizeof(routerTaskControlBlock),
+  .stack_mem = &routerTaskBuffer[0],
+  .stack_size = sizeof(routerTaskBuffer),
+  .priority = (osPriority_t) osPriorityHigh,
 };
 
 csp_iface_t csp_if_can1 = {
@@ -46,12 +58,6 @@ csp_iface_t csp_if_can1 = {
 static csp_can_s csp_can_ctx = {
     .iface = &csp_if_can1
 };
-
-/* Provide a simple implementation of GCC's __sync_synchronize()
-   which acts as a full memory barrier on Cortex-M3 (dmb). */
-void __sync_synchronize(void) {
-    __asm volatile ("dmb" ::: "memory");
-}
 
 // interrupt callback functions
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
@@ -238,18 +244,19 @@ static void broadcast_csp_packet(uint8_t *data, uint32_t len)
 }
 
 void task_csp_router(void *data) {
+    log_debug("%s(%u)\n\r", __func__, __LINE__);
     (void)data;
     while (1) {
         csp_route_work();
+        osDelay(10);
     }
 }
 
 void task_csp_server(void *data) {
     (void)data;
+    log_debug("%s(%u)\n\r", __func__, __LINE__);
 
-    // send hi first
     char *bcast_data = "hi bcast\n\0";
-    broadcast_csp_packet((uint8_t *)bcast_data, strlen(bcast_data));
 
     /* Create socket with no specific socket options, e.g. accepts CRC32, HMAC, etc. if enabled during
      * compilation */
@@ -266,12 +273,14 @@ void task_csp_server(void *data) {
         csp_conn_t *conn;
         if ((conn = csp_accept(&sock, 1000)) == NULL) {
             /* timeout */
+            broadcast_csp_packet((uint8_t *)bcast_data, strlen(bcast_data)); // send hi
+            log_debug("hi sent!\n\r");
             continue;
         }
 
         /* Read packets on connection, timout is 100 mS */
         csp_packet_t *packet;
-        while ((packet = csp_read(conn, 100)) != NULL) {
+        while ((packet = csp_read(conn, 1000)) != NULL) {
             if (csp_conn_dport(conn) > CSP_UPTIME) {
                 log_debug("CSP Packet Received\n Incoming Port: %d\tSenderPort: %d\tSender ID: %u\tPacket Length: %d\n\r",
                         csp_conn_dport(conn), csp_conn_sport(conn), packet->id.src, packet->length);
@@ -403,6 +412,7 @@ void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
 
 void libcspv2_task_start(void *arg) {
   csp_init();
-  libcsp2RouteHandle = osThreadNew(task_csp_router, NULL, &libcsp2Task_attributes);
+  log_debug("CSP Initialized!\n\r");
+  libcsp2RouteHandle = osThreadNew(task_csp_router, NULL, &routerTask_attributes);
   libcsp2TaskHandle = osThreadNew(task_csp_server, NULL, &libcsp2Task_attributes);
 }

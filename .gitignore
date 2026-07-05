@@ -6,6 +6,7 @@ renode/test.repl
 renode/test.resc
 libcanard_auto_generated
 Dev/libcspv2/.lock-waf_linux_build
+Dev/libcspv2/.waf*
 
 # Prerequisites
 *.d

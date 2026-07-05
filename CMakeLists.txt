@@ -32,8 +32,8 @@ message("Build type: " ${CMAKE_BUILD_TYPE})
 
 add_definitions(-DVERSION="${version}")
 add_definitions(-DCMB_USER_CFG=1)
-# disable below line if you want to use the can1 as libcanard
-add_definitions(-DUSE_CSP_OVER_CANARD=1)
+# enable below line if you want to use the can1 as csp instead of canard
+# add_definitions(-DUSE_CSP_OVER_CANARD=1)
 
 # Enable CMake support for ASM and C languages
 enable_language(C ASM)
