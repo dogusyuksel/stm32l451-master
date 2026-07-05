@@ -27,6 +27,7 @@
 /* USER CODE BEGIN Includes */
 #include "bsp.h"
 #include "libcanard_handlers.h"
+#include "libcsp2_handlers.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -102,7 +103,11 @@ void MX_FREERTOS_Init(void) {
   periodicTaskHandle = osThreadNew(StartPeriodicTask, NULL, &periodicTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
+#ifdef USE_CSP_OVER_CANARD
+  libcspv2_task_start(NULL);
+#else
   libcanard_task_start(NULL);
+#endif
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */

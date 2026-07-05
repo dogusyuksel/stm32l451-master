@@ -88,7 +88,12 @@ def configure(ctx):
                                          "-Wpedantic",
                                          "-Wpointer-arith",
                                          "-Wshadow",
-                                         "-Wwrite-strings"])
+                                         "-Wwrite-strings",
+                                         # CUSTOM_CHANGES
+                                         "-mcpu=cortex-m4",
+                                         "-mthumb",
+                                         "-mfpu=fpv4-sp-d16",
+                                         "-mfloat-abi=hard"])
         if ctx.env.CC_NAME == 'clang':
             ctx.env.append_value('CFLAGS', ["-Wno-gnu-zero-variadic-macro-arguments"])
 
