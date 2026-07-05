@@ -64,6 +64,17 @@ if(MY_ACTIVE_PRESET STREQUAL "Linux_Renode")
     )
 endif()
 
+add_custom_target(generate_dsdl
+    COMMAND ${CMAKE_COMMAND} -E rm -rf ${CMAKE_SOURCE_DIR}/Dev/libcanard_auto_generated
+    COMMAND ${CMAKE_SOURCE_DIR}/Dev/libcanard/dsdl_compiler/libcanard_dsdlc
+            ${CMAKE_SOURCE_DIR}/Dev/nodes
+            --incdir ${CMAKE_SOURCE_DIR}/Dev/libcanard/dsdl_compiler/pyuavcan/uavcan
+            --outdir ${CMAKE_SOURCE_DIR}/Dev/libcanard_auto_generated
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Generating DSDL sources"
+)
+add_dependencies(${CMAKE_PROJECT_NAME} generate_dsdl)
+
 # Add project symbols (macros)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined symbols

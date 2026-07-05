@@ -4,6 +4,7 @@ build/
 renode/stm32l451.repl
 renode/test.repl
 renode/test.resc
+libcanard_auto_generated
 
 # Prerequisites
 *.d

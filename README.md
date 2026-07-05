@@ -58,3 +58,4 @@ My software is free to use (no license) but you should also check dependent proj
 
 1. https://github.com/mpaland/printf/blob/master/LICENSE
 2. https://github.com/armink/CmBacktrace/blob/master/LICENSE
+3. https://github.com/OpenCyphal/libcanard/blob/master/LICENSE

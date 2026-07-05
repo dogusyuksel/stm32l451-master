@@ -315,7 +315,8 @@ class PrimitiveValue(BaseValue):
                 raise ValueError('Bad float, no donut')
             self._bits = format(int_value, "0" + str(self._type.bitlen) + "b")
 
-
+# CUSTOM_CHANGES, added one leine below
+collections.MutableSequence = collections.abc.MutableSequence
 # noinspection PyProtectedMember
 class ArrayValue(BaseValue, collections.MutableSequence):
     def __init__(self, _uavcan_type, *args, **kwargs):

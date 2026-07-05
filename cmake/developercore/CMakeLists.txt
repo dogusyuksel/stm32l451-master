@@ -8,16 +8,26 @@ set(Dev_Include_Dirs
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/logging/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/cm_backtrace/Languages/en-US
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/cm_backtrace
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/libcanard
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/libcanard/drivers/stm32
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/libcanard_auto_generated
+)
+
+file(GLOB_RECURSE generated_files
+     "${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/libcanard_auto_generated/*.c"
 )
 
 # developercore generated application sources
 set(Dev_Application_Src
+    ${generated_files}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/bsp.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/uart_handlers.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/freertos_over.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/logging/src/printf.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/logging/src/logging.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/cm_backtrace/cm_backtrace.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/libcanard/canard.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/libcanard/drivers/stm32/canard_stm32.c
 )
 
 # Link directories setup
