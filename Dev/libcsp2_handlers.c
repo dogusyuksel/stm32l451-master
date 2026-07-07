@@ -248,7 +248,7 @@ void task_csp_router(void *data) {
     (void)data;
     while (1) {
         csp_route_work();
-        osDelay(10);
+        // osDelay(10);
     }
 }
 
@@ -333,8 +333,9 @@ void packet_dump(uint8_t *data, uint16_t len) {
 
 void csp_output_hook(csp_id_t *idout, csp_packet_t *packet, csp_iface_t *iface, uint16_t via, int from_me) {
     (void)from_me;
-    log_debug("OUT: S %u, D %u, Dp %u, Sp %u, Pr %u, Fl 0x%02X, Sz %u VIA: %s (%u)\n\r",
+    log_debug("OUT: S %u, D %u(0x%X), Dp %u, Sp %u, Pr %u, Fl 0x%02X, Sz %u VIA: %s (%u)\n\r",
               idout->src,
+              idout->dst,
               idout->dst,
               idout->dport,
               idout->sport,
@@ -411,8 +412,13 @@ void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
 
 
 void libcspv2_task_start(void *arg) {
+  csp_conf.hostname = "stm32l4-master";
+  csp_conf.model = "stm32l4 master";
+  csp_conf.version = 2;
+//   csp_conf.conn_dfl_so = CSP_O_NOCRC32;
   csp_init();
   log_debug("CSP Initialized!\n\r");
   libcsp2RouteHandle = osThreadNew(task_csp_router, NULL, &routerTask_attributes);
+  can_add_interface(LOCAL_NODE_ID, CSP_NETMASK);
   libcsp2TaskHandle = osThreadNew(task_csp_server, NULL, &libcsp2Task_attributes);
 }

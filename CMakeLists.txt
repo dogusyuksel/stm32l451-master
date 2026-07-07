@@ -33,7 +33,7 @@ message("Build type: " ${CMAKE_BUILD_TYPE})
 add_definitions(-DVERSION="${version}")
 add_definitions(-DCMB_USER_CFG=1)
 # enable below line if you want to use the can1 as csp instead of canard
-# add_definitions(-DUSE_CSP_OVER_CANARD=1)
+add_definitions(-DUSE_CSP_OVER_CANARD=1)
 
 # Enable CMake support for ASM and C languages
 enable_language(C ASM)
@@ -66,8 +66,9 @@ add_custom_target(libcsp_build ALL
     COMMAND ./waf configure
         --with-os=freertos 
         --toolchain=arm-none-eabi- 
-        --with-max-bind-port 32 
+        --with-max-bind-port 61 
         --enable-promisc 
+        --with-rtable-size 32 
         --enable-rtable 
         --includes 
             ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2,${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/include,${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F,${CMAKE_SOURCE_DIR}/Core/Inc

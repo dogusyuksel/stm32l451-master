@@ -61,6 +61,8 @@ Please follow 'CUSTOM_CHANGES' to see custom changes on external sources.
 
 To use can2 instead of can1 for libcanard, use 'CANARD_STM32_USE_CAN2' define.
 
+For more detail about uavcan (legacy libcanard): https://legacy.uavcan.org/Specification/1._Introduction/
+
 
 ## License
 
