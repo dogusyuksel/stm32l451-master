@@ -1,3 +1,5 @@
+#ifndef USE_CSP_OVER_CANARD
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -284,3 +286,5 @@ void spinCanard(void) {
     log_debug("broadcast failed: %d\n)", bc_res);
   }
 }
+
+#endif

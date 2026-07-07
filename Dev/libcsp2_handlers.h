@@ -1,6 +1,8 @@
 #ifndef __LIBCSP2_HANDLERS_H__
 #define __LIBCSP2_HANDLERS_H__
 
+#ifdef USE_CSP_OVER_CANARD
+
 #include <stdint.h>
 #include <csp/csp_interface.h>
 #include <csp/interfaces/csp_if_can.h>
@@ -54,5 +56,7 @@ void task_csp_server(void *data);
 #define LIBCSP_LOOP_DELAY 100
 
 void libcspv2_task_start(void *arg);
+
+#endif
 
 #endif // __LIBCSP2_HANDLERS_H__

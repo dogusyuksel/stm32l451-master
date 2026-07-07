@@ -26,8 +26,11 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "bsp.h"
-#include "libcanard_handlers.h"
+#ifdef USE_CSP_OVER_CANARD
 #include "libcsp2_handlers.h"
+#else
+#include "libcanard_handlers.h"
+#endif
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

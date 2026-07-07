@@ -1,3 +1,5 @@
+#ifdef USE_CSP_OVER_CANARD
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,6 +62,14 @@ static csp_can_s csp_can_ctx = {
 };
 
 // interrupt callback functions
+// void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan) {
+//     csp_can_tx_frame_cb();
+// }
+
+// void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan) {
+//     csp_can_tx_frame_cb();
+// }
+
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
     CAN_RxHeaderTypeDef header;
     uint8_t data[8];
@@ -149,8 +159,12 @@ static int csp_can_tx_frame(void *driver_data, uint32_t id, const uint8_t * data
     uint8_t result = 1;
     if (xSemaphoreTake(csp_can->tx_sem, portMAX_DELAY) == pdTRUE) {
         result = hal_can_write(&hcan1, id, local_data, dlc);
+        if (result != 0) {
+            log_debug("can_write error %x\n\r", result);
+        }
+        xSemaphoreGive(csp_can->tx_sem);
     } else {
-        log_debug("Failed to take CSP TX Semaphore");
+        log_debug("Failed to take CSP TX Semaphore\n\r");
     }
 
     return result;
@@ -160,18 +174,19 @@ uint8_t hal_can_write(CAN_HandleTypeDef *can, uint32_t addr, uint8_t *data, uint
     uint8_t rc;
     CAN_TxHeaderTypeDef header = {0};
     uint32_t mailbox;
-    uint32_t err;
 
     if (!can) {
         return 1;
     }
 
     header.ExtId = addr;
-    header.RTR = CAN_RTR_DATA;
     header.IDE = CAN_ID_EXT;
+    header.RTR = CAN_RTR_DATA;
     header.DLC = len;
     header.TransmitGlobalTime = DISABLE;
 
+#ifndef RENODE_BUILD
+    uint32_t err;
     // Check if CAN is in error state
     err = HAL_CAN_GetError(can);
     if (err != 0) {
@@ -179,9 +194,23 @@ uint8_t hal_can_write(CAN_HandleTypeDef *can, uint32_t addr, uint8_t *data, uint
         // There are CAN errors
         return 2;
     }
+// #else
+//     HAL_CAN_ResetError(can);
+#endif
 
     // Handle all TX mailboxes being full (in this case, probably by blocking)
     rc = HAL_CAN_AddTxMessage(can, &header, data, &mailbox);
+    if (rc || HAL_CAN_GetError(can)) {
+        log_debug("HAL state=%lu free=%lu addTx=%d mailbox=%lu TSR=%08lx err=%08lx\r\n",
+            HAL_CAN_GetState(can),
+            HAL_CAN_GetTxMailboxesFreeLevel(can),
+            rc,
+            mailbox,
+            can->Instance->TSR,
+            HAL_CAN_GetError(can));
+    }
+
+#ifndef RENODE_BUILD
     if (rc != HAL_OK) {
         err = HAL_CAN_GetError(can);
         if (err != 0) {
@@ -192,6 +221,9 @@ uint8_t hal_can_write(CAN_HandleTypeDef *can, uint32_t addr, uint8_t *data, uint
             return 4;
         }
     }
+// #else
+//     HAL_CAN_ResetError(can);
+#endif
 
     return 0;
 }
@@ -256,7 +288,7 @@ void task_csp_server(void *data) {
     (void)data;
     log_debug("%s(%u)\n\r", __func__, __LINE__);
 
-    char *bcast_data = "hi bcast\n\0";
+    char *bcast_data = "hello\n\0";
 
     /* Create socket with no specific socket options, e.g. accepts CRC32, HMAC, etc. if enabled during
      * compilation */
@@ -422,3 +454,5 @@ void libcspv2_task_start(void *arg) {
   can_add_interface(LOCAL_NODE_ID, CSP_NETMASK);
   libcsp2TaskHandle = osThreadNew(task_csp_server, NULL, &libcsp2Task_attributes);
 }
+
+#endif
