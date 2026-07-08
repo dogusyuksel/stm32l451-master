@@ -10,6 +10,8 @@ Dev/libcspv2/.waf*
 Dev/libcspv2/build
 tools/libcanard_listener/build
 tools/libcsp_listener/server.exe
+Cargo.lock
+tools/libcsp_listener/rust-server/bindings-creator/target/
 
 # Prerequisites
 *.d

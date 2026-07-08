@@ -1,0 +1,15 @@
+[package]
+name = "csp-server"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "csp-server"
+path = "src/server.rs"
+
+[dependencies]
+structopt = "0.3"
+libc = "0.2.0"
+tokio = { version = "1", features = ["full"] }
+
+libcsp = { path = "../libcsp/" }

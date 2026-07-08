@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libsocketcan
+Description: provides access to socketcan configuration interface
+Version: @VERSION@
+Libs: -L${libdir} -lsocketcan
+Cflags: -I${includedir}
