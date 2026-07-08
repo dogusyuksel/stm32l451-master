@@ -126,8 +126,10 @@ build_fw_in_docker_renode
 | `build_fw_in_docker_renode`      | Docker Renode firmware build      |
 | `start_renode_machine_linux`     | Launch Renode (Linux)             |
 | `start_renode_machine_in_docker` | Launch Renode (Docker)            |
-| `build_libcanard_tool_in_docker` | Build libcanard listener (Linux)  |
-| `build_libcanard_tool_in_linux`  | Build libcanard listener (Docker) |
+| `build_libcanard_tool_in_linux`  | Build libcanard listener (Linux)  |
+| `build_libcanard_tool_in_docker` | Build libcanard listener (Docker) |
+| `build_libcsp_tool_in_linux`     | Build libcsp listener (Linux)     |
+| `build_libccsp_tool_in_docker`   | Build libcsp listener (Docker)    |
 
 ---
 

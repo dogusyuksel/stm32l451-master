@@ -23,6 +23,9 @@ RUN apt-get update && \
         libncurses5 \
         libncurses5-dev \
         cmake \
+        libsocketcan-dev \
+        pkgconf \
+        libzmq3-dev \
         gdb && \
     apt-get -y clean
 

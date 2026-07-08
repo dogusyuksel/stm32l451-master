@@ -27,6 +27,7 @@ def options(ctx):
     gr.add_option('--enable-shlib', action='store_true', help='Build shared library')
     gr.add_option('--enable-rdp', action='store_true', help='Enable RDP support')
     gr.add_option('--enable-promisc', action='store_true', help='Enable promiscuous support')
+    gr.add_option('--enable-custom-changes', action='store_true', help='Enable custom changes') # CUSTOM_CHANGES
     gr.add_option('--enable-crc32', action='store_true', help='Enable CRC32 support')
     gr.add_option('--enable-hmac', action='store_true', help='Enable HMAC-SHA1 support')
     gr.add_option('--enable-rtable', action='store_true', help='Allows to setup a list of static routes')
@@ -88,12 +89,12 @@ def configure(ctx):
                                          "-Wpedantic",
                                          "-Wpointer-arith",
                                          "-Wshadow",
-                                         "-Wwrite-strings",
-                                         # CUSTOM_CHANGES
-                                         "-mcpu=cortex-m4",
-                                         "-mthumb",
-                                         "-mfpu=fpv4-sp-d16",
-                                         "-mfloat-abi=hard"])
+                                         "-Wwrite-strings"])
+        if ctx.options.enable_custom_changes:
+            ctx.env.append_value('CFLAGS', ["-mcpu=cortex-m4",
+                                            "-mthumb",
+                                            "-mfpu=fpv4-sp-d16",
+                                            "-mfloat-abi=hard"])
         if ctx.env.CC_NAME == 'clang':
             ctx.env.append_value('CFLAGS', ["-Wno-gnu-zero-variadic-macro-arguments"])
 
