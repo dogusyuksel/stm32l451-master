@@ -49,6 +49,27 @@ The project is intended for two main workflows:
 - CmBacktrace fault/backtrace support
 - Lightweight UART logging layer
 
+## Simulated Hardware
+
+The current virtual board contains the following peripherals.
+
+| Peripheral         | Status |
+| ------------------ | :----: |
+| GPIO Button        |    ✅   |
+| User LED           |    ✅   |
+| UART1              |    ✅   |
+| CAN1               |    ✅   |
+| SocketCAN Bridge   |    ✅   |
+| SPI1               |    ✅   |
+| MX25R Flash        |    ✅   |
+| I2C1               |    ✅   |
+| BMA180             |    ✅   |
+| STM32 RNG          |    ✅   |
+| RCC                |    ✅   |
+| Chip Select Logger |    ✅   |
+
+---
+
 ## Project Structure
 
 ```text
@@ -198,6 +219,28 @@ STM32_RNG.cs
 STM32L4_RCC.cs
 STML4_I2C.cs
 USERLED.cs
+```
+
+## Architecture
+
+```text
+                    +-----------------------------+
+                    |      STM32L451 Firmware     |
+                    +-------------+---------------+
+                                  |
+               +------------------+------------------+
+               |                                     |
+        Physical Hardware                    Renode Simulation
+               |                                     |
+      STM32L451 MCU Model                   Custom Peripheral Models
+               |                                     |
+      UART / SPI / I2C / CAN           UART / SPI / I2C / CAN
+               |                                     |
+               +------------------+------------------+
+                                  |
+                        SocketCAN / GDB / Telnet
+                                  |
+                       Linux Host Development
 ```
 
 ## GDB Debugging
