@@ -331,6 +331,7 @@ Please also review the licenses of all third-party libraries.
 * CmBacktrace           : https://github.com/armink/CmBacktrace/blob/master/LICENSE
 * OpenCyphal Libcanard  : https://github.com/OpenCyphal/libcanard/blob/master/LICENSE
 * libcsp                : https://github.com/libcsp/libcsp/blob/develop/LICENSE
+* libsockercan          : https://github.com/linux-can/libsocketcan/blob/master/LICENSE
 
 ---
 
