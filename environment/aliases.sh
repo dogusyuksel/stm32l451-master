@@ -25,7 +25,7 @@ alias start_renode_machine_linux="cd $SCRIPT_DIR/../renode && python3 generate.p
 alias build_libcanard_tool_in_docker="docker run --rm -t --net=host -v \"$SCRIPT_DIR\"/..:\"$DOCKER_WORKINGDIR\" --entrypoint=/bin/bash \"$DOCKER_IMAGE_NAME\" -c \"cd $DOCKER_WORKINGDIR/tools/libcanard_listener && rm -rf build && mkdir build && cd build && cmake .. && make && cd -\""
 alias build_libcanard_tool_in_linux="cd $SCRIPT_DIR/../tools/libcanard_listener && rm -rf build && mkdir build && cd build && cmake .. && make && cd -"
 
-alias build_libccsp_tool_in_docker="docker run --rm -t --net=host -v \"$SCRIPT_DIR\"/..:\"$DOCKER_WORKINGDIR\" --entrypoint=/bin/bash \"$DOCKER_IMAGE_NAME\" -c \"cd $DOCKER_WORKINGDIR/tools/libcsp_listener && ./build.sh && cd -\""
+alias build_libcsp_tool_in_docker="docker run --rm -t --net=host -v \"$SCRIPT_DIR\"/..:\"$DOCKER_WORKINGDIR\" --entrypoint=/bin/bash \"$DOCKER_IMAGE_NAME\" -c \"cd $DOCKER_WORKINGDIR/tools/libcsp_listener && ./build.sh && cd -\""
 alias build_libcsp_tool_in_linux="cd $SCRIPT_DIR/../tools/libcsp_listener && ./build.sh && cd -"
 
 # ==========================

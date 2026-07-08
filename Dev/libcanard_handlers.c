@@ -283,8 +283,13 @@ void spinCanard(void) {
                                    NODES_NODE2_NODEPING_ID, &transfer_id,
                                    CANARD_TRANSFER_PRIORITY_LOW, buf_ping, len);
   if (bc_res < 0) {
-    log_debug("broadcast failed: %d\n)", bc_res);
+    log_debug("broadcast failed: %d\n\r", bc_res);
   }
+#ifdef RENODE_BUILD
+  else {
+    log_debug("broadcast sent\n\r");
+  }
+#endif
 }
 
 #endif

@@ -20,18 +20,18 @@ struct tskTaskControlBlock
     UBaseType_t uxStackDepth;
 };
 
-void *vTaskStackAddr(void)
+uint32_t *vTaskStackAddr(void)
 {
     TCB_t *tcb = (TCB_t *)xTaskGetCurrentTaskHandle();
 
-    return (void *)tcb->pxStack;
+    return (uint32_t *)tcb->pxStack;
 }
 
-size_t vTaskStackSize(void)
+uint32_t vTaskStackSize(void)
 {
     TCB_t *tcb = (TCB_t *)xTaskGetCurrentTaskHandle();
 
-    return tcb->uxStackDepth * sizeof(StackType_t);
+    return (uint32_t)tcb->uxStackDepth;
 }
 
 char *vTaskName(void)
