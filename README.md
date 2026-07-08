@@ -45,6 +45,7 @@ Embedded firmware development platform with **Docker**, **Renode**, **SocketCAN*
 ├── environment/
 ├── Middlewares/
 ├── renode/
+├── tools/
 ├── CMakeLists.txt
 ├── CMakePresets.json
 ├── startup_stm32l451xx.s
@@ -114,17 +115,19 @@ build_fw_in_docker_renode
 
 # 🚀 Available Aliases
 
-| Alias                            | Description                  |
-| -------------------------------- | ---------------------------- |
-| `build_docker`                   | Build Docker image           |
-| `run_docker`                     | Interactive Docker shell     |
-| `run_docker_as_root`             | Docker shell as root         |
-| `build_fw_linux`                 | Native firmware build        |
-| `build_fw_linux_renode`          | Native Renode build          |
-| `build_fw_in_docker`             | Docker firmware build        |
-| `build_fw_in_docker_renode`      | Docker Renode firmware build |
-| `start_renode_machine_linux`     | Launch Renode (Linux)        |
-| `start_renode_machine_in_docker` | Launch Renode (Docker)       |
+| Alias                            | Description                       |
+| -------------------------------- | --------------------------------- |
+| `build_docker`                   | Build Docker image                |
+| `run_docker`                     | Interactive Docker shell          |
+| `run_docker_as_root`             | Docker shell as root              |
+| `build_fw_linux`                 | Native firmware build             |
+| `build_fw_linux_renode`          | Native Renode build               |
+| `build_fw_in_docker`             | Docker firmware build             |
+| `build_fw_in_docker_renode`      | Docker Renode firmware build      |
+| `start_renode_machine_linux`     | Launch Renode (Linux)             |
+| `start_renode_machine_in_docker` | Launch Renode (Docker)            |
+| `build_libcanard_tool_in_docker` | Build libcanard listener (Linux)  |
+| `build_libcanard_tool_in_linux`  | Build libcanard listener (Docker) |
 
 ---
 

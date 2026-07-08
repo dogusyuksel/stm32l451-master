@@ -22,6 +22,9 @@ alias build_fw_linux_renode="cd $SCRIPT_DIR/.. && rm -rf build && mkdir build &&
 alias start_renode_machine_in_docker="docker run --rm -t --net=host -v \"$SCRIPT_DIR\"/..:\"$DOCKER_WORKINGDIR\" --entrypoint=/bin/bash \"$DOCKER_IMAGE_NAME\" -c \"cd $DOCKER_WORKINGDIR/renode && python3 generate.py && renode -e 'start @test.resc' && cd -\""
 alias start_renode_machine_linux="cd $SCRIPT_DIR/../renode && python3 generate.py && renode -e 'start @test.resc' && cd -"
 
+alias build_libcanard_tool_in_docker="docker run --rm -t --net=host -v \"$SCRIPT_DIR\"/..:\"$DOCKER_WORKINGDIR\" --entrypoint=/bin/bash \"$DOCKER_IMAGE_NAME\" -c \"cd $DOCKER_WORKINGDIR/tools/libcanard_listener && rm -rf build && mkdir build && cd build && cmake .. && make && cd -\""
+alias build_libcanard_tool_in_linux="cd $SCRIPT_DIR/../tools/libcanard_listener && rm -rf build && mkdir build && cd build && cmake .. && make && cd -"
+
 # ==========================
 # Welcome Message
 # ==========================
