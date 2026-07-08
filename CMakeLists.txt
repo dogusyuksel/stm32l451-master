@@ -66,6 +66,7 @@ add_custom_target(libcsp_build ALL
     COMMAND ./waf configure
         --with-os=freertos 
         --toolchain=arm-none-eabi- 
+        --enable-custom-changes 
         --with-max-bind-port 61 
         --enable-promisc 
         --with-rtable-size 32 
