@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+#define TRIGGER_FAULT_COMMAND "trigger_fault"
+#define TRIGGER_WDT_COMMAND "trigger_wdt"
+
 #define UART_RX_BUFFER_SIZE 256
 #define UART_RX_TIMEOUT_MS 100
 

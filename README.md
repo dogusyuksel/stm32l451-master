@@ -320,6 +320,13 @@ rg CUSTOM_CHANGES
 See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the third-party
 license summary.
 
+## Test Commands
+
+```
+printf '\x74\x72\x69\x67\x67\x65\x72\x5f\x66\x61\x75\x6c\x74' | nc localhost 1234  // test crash
+printf '\x74\x72\x69\x67\x67\x65\x72\x5f\x77\x64\x74' | nc localhost 1234          // test wdt
+```
+
 ## License
 
 Project-specific code in this repository is released under the MIT license.
