@@ -136,6 +136,8 @@ i2c4: I2C.STM32L4_I2C @ sysbus 0x40008400
 can1: CAN.STMCAN @ sysbus <0x40006400, +0x400>
     [0-3] -> nvic@[19-22]
 
+adc: Analog.STM32_ADC @ sysbus 0x50040000
+
 exti: IRQControllers.STM32F4_EXTI @ sysbus 0x40010400
     numberOfOutputLines: 19
     [0-4] -> nvic@[6-10]
