@@ -10,6 +10,7 @@
 #include "spi.h"
 #include "i2c.h"
 #include "iwdg.h"
+#include "adc.h"
 #include "logging.h"
 #include "stm32l4xx_hal.h"
 #include "cm_backtrace.h"
@@ -101,6 +102,26 @@ static int extFlashPowerDown(void) {
   return ret;
 }
 
+static uint16_t read_adc(void) {
+        ADC_ChannelConfTypeDef conf = {
+        .Channel = ADC_CHANNEL_5,
+        .Rank = 1,
+        .SamplingTime = ADC_SAMPLETIME_24CYCLES_5,
+    };
+    if (HAL_ADC_ConfigChannel(&hadc1, &conf) != HAL_OK) {
+        Error_Handler();
+    }
+
+    // if continuous mode selected, you should not have to call it each time as well as HAL_ADC_Stop function
+    // HAL_ADC_Start(&hadc1);
+    HAL_ADC_PollForConversion(&hadc1, 500);
+    uint16_t adc_result = HAL_ADC_GetValue(&hadc1);
+    uint16_t adc_result_in_mv = ((3300 * adc_result) / 4095);
+    // HAL_ADC_Stop(&hadc1);
+
+    return adc_result_in_mv;
+}
+
 void board_periodic_task(void *argument) {
   static uint32_t led_toggle_counter = 0;
 
@@ -132,8 +153,12 @@ void board_periodic_task(void *argument) {
       HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
     }
 
-    if (led_toggle_counter % 100 == 1) {
+    if ((led_toggle_counter % 100) == 1) {
       RNG_test();
+    }
+
+    if ((led_toggle_counter % 200) == 1) {
+        log_debug("read_adc: %u\n\r", read_adc());
     }
 
     HAL_IWDG_Refresh(&hiwdg); // feed wdt
