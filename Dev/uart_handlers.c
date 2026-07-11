@@ -45,9 +45,11 @@ void custom_uart_interrupt_handler(uint8_t byte) {
 void custom_uart_handler(uint32_t current_tick) {
   if (uart_buffer_index > 0 && (current_tick - last_data_tick) >= UART_RX_TIMEOUT_MS) {
     // Process the received data
-    if (buffer_contains(uart_buffer, uart_buffer_index, "trigger_fault")) {
+    if (buffer_contains(uart_buffer, uart_buffer_index, TRIGGER_FAULT_COMMAND)) {
       // just tp show backtrace is working
       __asm volatile(".word 0xFFFFFFFF");
+    }else if (buffer_contains(uart_buffer, uart_buffer_index, TRIGGER_WDT_COMMAND)) {
+        while(1){} // trigger wdt
     } else {
       log_debug("Received UART data: ");
       for (uint32_t i = 0; i < uart_buffer_index; i++) {

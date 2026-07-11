@@ -9,6 +9,7 @@
 #include "rng.h"
 #include "spi.h"
 #include "i2c.h"
+#include "iwdg.h"
 #include "logging.h"
 #include "stm32l4xx_hal.h"
 #include "cm_backtrace.h"
@@ -134,5 +135,7 @@ void board_periodic_task(void *argument) {
     if (led_toggle_counter % 100 == 1) {
       RNG_test();
     }
+
+    HAL_IWDG_Refresh(&hiwdg); // feed wdt
   }
 }
