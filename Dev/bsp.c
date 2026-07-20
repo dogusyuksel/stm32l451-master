@@ -16,11 +16,21 @@
 #include "cm_backtrace.h"
 
 static uint8_t uart1_rx_byte;
+static uint8_t uart3_rx_byte;
+
+uint8_t xmodem_buffer[2048] = {0};
+static uint32_t xmodem_buffer_counter = 0;
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
     if (huart == &huart1) {
         HAL_UART_Receive_IT(&huart1, (uint8_t *)&uart1_rx_byte, 1);
         custom_uart_interrupt_handler(uart1_rx_byte);
+    } else if (huart == &huart3) {
+        HAL_UART_Receive_IT(&huart3, (uint8_t *)&uart3_rx_byte, 1);
+        xmodem_buffer[xmodem_buffer_counter++] = uart3_rx_byte;
+        if (xmodem_buffer_counter >= sizeof(xmodem_buffer)) {
+            xmodem_buffer_counter = 0;
+        }
     }
 }
 
@@ -123,43 +133,43 @@ static uint16_t read_adc(void) {
 }
 
 void board_periodic_task(void *argument) {
-  static uint32_t led_toggle_counter = 0;
+//   static uint32_t led_toggle_counter = 0;
 
-  /* Put the part is standby mode */
-  extFlashPowerStandby();
-  osDelay(20);
-  /* Verify manufacturer and device ID */
-  ExtFlash_readInfo();
-  osDelay(20);
-  // Put the part in low power mode
-  extFlashPowerDown();
+//   /* Put the part is standby mode */
+//   extFlashPowerStandby();
+//   osDelay(20);
+//   /* Verify manufacturer and device ID */
+//   ExtFlash_readInfo();
+//   osDelay(20);
+//   // Put the part in low power mode
+//   extFlashPowerDown();
 
-  uint8_t buf[2];
-  uint8_t chipID = 0;
-  buf[0] = 0xFC; // SendingData state
-  buf[1] = 0x00; // Chip ID register
+//   uint8_t buf[2];
+//   uint8_t chipID = 0;
+//   buf[0] = 0xFC; // SendingData state
+//   buf[1] = 0x00; // Chip ID register
 
-  HAL_I2C_Master_Transmit(&hi2c1, 0x6B << 1, buf, 2, 300);
-  HAL_I2C_Master_Receive(&hi2c1, 0x6B << 1, &chipID, 1, 300);
+//   HAL_I2C_Master_Transmit(&hi2c1, 0x6B << 1, buf, 2, 300);
+//   HAL_I2C_Master_Receive(&hi2c1, 0x6B << 1, &chipID, 1, 300);
 
-  log_debug("i2c1, BMA180 chipID: %u\n", chipID);
+//   log_debug("i2c1, BMA180 chipID: %u\n", chipID);
 
   /* Infinite loop */
   for(;;) {
-    custom_uart_handler(osKernelGetTickCount());
-    osDelay(UART_RX_TIMEOUT_MS);
+    // custom_uart_handler(osKernelGetTickCount());
+    // osDelay(UART_RX_TIMEOUT_MS);
 
-    if ((++(led_toggle_counter) % 50) == 1) {
-      HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-    }
+    // if ((++(led_toggle_counter) % 50) == 1) {
+    //   HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+    // }
 
-    if ((led_toggle_counter % 100) == 1) {
-      RNG_test();
-    }
+    // if ((led_toggle_counter % 100) == 1) {
+    //   RNG_test();
+    // }
 
-    if ((led_toggle_counter % 200) == 1) {
-        log_debug("read_adc: %u\n\r", read_adc());
-    }
+    // if ((led_toggle_counter % 200) == 1) {
+    //     log_debug("read_adc: %u\n\r", read_adc());
+    // }
 
     HAL_IWDG_Refresh(&hiwdg); // feed wdt
   }
