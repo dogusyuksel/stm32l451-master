@@ -10,6 +10,11 @@
 #include "xmodem.h"
 #include "logging.h"
 #include "usart.h"
+#include <string.h>
+#include "FreeRTOS.h"
+#include "task.h"
+#include "main.h"
+#include "cmsis_os.h"
 
 /* Global variables. */
 static uint8_t xmodem_packet_number = 1u;         /**< Packet number counter. */
@@ -32,7 +37,7 @@ typedef enum {
 uint8_t flash_erase(uint32_t start_address);
 uint8_t flash_write(uint32_t address, uint32_t *buffer, uint32_t len);
 uart_status uart_receive(uint8_t *buffer, int32_t len);
-uart_status uart_transmit_ch(uint8_t char);
+uart_status uart_transmit_ch(uint8_t chchar);
 
 uint8_t flash_erase(uint32_t start_address) {
   log_debug("TODO: delete flash from starting address 0x%lX\n\r", start_address);
@@ -40,29 +45,56 @@ uint8_t flash_erase(uint32_t start_address) {
 }
 
 uint8_t flash_write(uint32_t address, uint32_t *buffer, uint32_t len) {
-  log_debug("TODO: flash write operation to address 0x%lX\n\r", address);
+  log_debug("Flash write to 0x%08lX (%lu words):\n\r", address, len);
   for (uint32_t i = 0; i < len; i++) {
-    log_debug(" 0x.08lX", buffer[i]);
+    log_debug(" 0x%08lX", buffer[i]);  // ✅ Düzeltildi: 0x.08lX → 0x%08lX
+    if ((i + 1) % 8 == 0) {
+      log_debug("\n\r");  // Her 8 word'de satır atla
+    }
   }
-  log_debug("\n\r");
+  if (len % 8 != 0) {
+    log_debug("\n\r");
+  }
   return FLASH_OK;
 }
 
-extern uint8_t xmodem_buffer[2048] = {0};
+extern uint8_t xmodem_buffer[2048];
+extern uint32_t xmodem_buffer_counter;
 static uint32_t xmodem_buffer_index = 0;
 uart_status uart_receive(uint8_t *buffer, int32_t len) {
-  memcpy(buffer, &xmodem_buffer[xmodem_buffer_index], len);
-  xmodem_buffer_index = xmodem_buffer_index + len;
-  if (xmodem_buffer_index >= sizeof(xmodem_buffer)) {
-    xmodem_buffer_index = 0;
+//   // ✅ RX buffer'ı temizle (eski data kalmasın)
+//   __HAL_UART_FLUSH_DRREGISTER(&huart3);
+  
+  HAL_StatusTypeDef status = HAL_UART_Receive(&huart3, buffer, len, 5000);
+  
+  if (status == HAL_OK) {
+    return UART_OK;
   }
-  return UART_OK;
+  
+  return UART_NOK;
 }
 
 uart_status uart_transmit_ch(uint8_t ch) {
-  uint8_t localbuff[1] = {0};
-  localbuff[0] = ch;
-  HAL_UART_Transmit(&huart3, (uint8_t *)localbuff, sizeof(localbuff), sizeof(localbuff));
+  uint8_t localbuff[1] = {ch};
+  
+  // ✅ UART3 aktif mi kontrol et
+  if (huart3.Instance == NULL) {
+    log_debug("ERROR: UART3 not initialized!\n\r");
+    return UART_NOK;
+  }
+  
+  // ✅ Gönderilecek byte'ı logla
+  log_debug(">>> TX: 0x%02X ('%c') <<<\n\r", ch, 
+            (ch >= 32 && ch < 127) ? ch : '.');
+  
+  HAL_StatusTypeDef status = HAL_UART_Transmit(&huart3, localbuff, 1, 1000);
+  
+  if (status != HAL_OK) {
+    log_debug("ERROR: HAL_UART_Transmit failed! Status: %d\n\r", status);
+    return UART_NOK;
+  }
+  
+  log_debug(">>> TX OK <<<\n\r");
   return UART_OK;
 }
 
@@ -81,75 +113,107 @@ void xmodem_receive(void)
   xmodem_packet_number = 1u;
   xmodem_actual_flash_address = FLASH_APP_START_ADDRESS;
 
-  /* Loop until there isn't any error (or until we jump to the user application). */
+  log_debug("=== Xmodem Receiver Started ===\n\r");
+
+  // ✅ İlk 'C' gönder (CRC16 mode)
+  uart_transmit_ch(X_C);
+  log_debug("Sent initial 'C'\n\r");
+
+    uint32_t total_packets = 0;
+
   while (X_OK == status)
   {
     uint8_t header = 0x00u;
-
-    /* Get the header from UART. */
     uart_status comm_status = uart_receive(&header, 1u);
 
-    /* Spam the host (until we receive something) with ACSII "C", to notify it, we want to use CRC-16. */
+    // ✅ Timeout handling
     if ((UART_OK != comm_status) && (false == x_first_packet_received))
     {
-      (void)uart_transmit_ch(X_C);
+      // İlk paket gelmedi, 'C' göndermeye devam et
+      error_number++;
+      if (error_number >= X_MAX_ERRORS)
+      {
+        log_debug("ERROR: Timeout waiting for first packet\n\r");
+        status = X_ERROR;
+        break;
+      }
+      
+      uart_transmit_ch(X_C);
+      log_debug("Timeout - resending 'C' (%d/%d)\n\r", error_number, X_MAX_ERRORS);
+      continue;
     }
-    /* Uart timeout or any other errors. */
     else if ((UART_OK != comm_status) && (true == x_first_packet_received))
     {
+      log_debug("ERROR: UART timeout after first packet\n\r");
       status = xmodem_error_handler(&error_number, X_MAX_ERRORS);
-    }
-    else
-    {
-      /* Do nothing. */
+      continue;
     }
 
-    /* The header can be: SOH, STX, EOT and CAN. */
+    // ✅ Header alındı
+    log_debug("\n>>> Header: 0x%02X <<<\n", header);
+
     switch(header)
     {
-      xmodem_status packet_status = X_ERROR;
-      /* 128 or 1024 bytes of data. */
       case X_SOH:
       case X_STX:
-        /* If the handling was successful, then send an ACK. */
-        packet_status = xmodem_handle_packet(header);
+      {
+        log_debug("Processing %s packet #%d...\n\r", 
+                  (header == X_SOH) ? "SOH(128)" : "STX(1024)", 
+                  xmodem_packet_number);
+        
+        xmodem_status packet_status = xmodem_handle_packet(header);
+        
         if (X_OK == packet_status)
         {
-          (void)uart_transmit_ch(X_ACK);
+          // ✅ BAŞARILI - ACK GÖNDER
+          uart_transmit_ch(X_ACK);
+            total_packets++;
+            
+            // Her 100 pakette bir ilerleme göster
+            if (total_packets % 100 == 0) {
+                log_debug("Progress: %lu packets\n\r", 
+                        total_packets);
+            }
+          log_debug(">>> ACK sent for packet %d <<<\n\r", xmodem_packet_number - 1);
+          error_number = 0;  // Hata sayacını sıfırla
         }
-        /* If the error was flash related, then immediately set the error counter to max (graceful abort). */
         else if (X_ERROR_FLASH == packet_status)
         {
+          log_debug("ERROR: Flash error\n\r");
           error_number = X_MAX_ERRORS;
           status = xmodem_error_handler(&error_number, X_MAX_ERRORS);
         }
-        /* Error while processing the packet, either send a NAK or do graceful abort. */
         else
         {
+          log_debug("ERROR: Packet failed (0x%02X)\n\r", packet_status);
           status = xmodem_error_handler(&error_number, X_MAX_ERRORS);
         }
         break;
-      /* End of Transmission. */
+      }
+        
       case X_EOT:
-        /* ACK, feedback to user (as a text), then jump to user application. */
-        (void)uart_transmit_ch(X_ACK);
-        (void)log_debug((uint8_t*)"\n\rFirmware updated!\n\r");
-        (void)log_debug((uint8_t*)"Jumping to user application...\n\r");
-        // flash_jump_to_app(); // TODO. implement later
+        log_debug("=== EOT received ===\n\r");
+        uart_transmit_ch(X_ACK);
+        log_debug("✓ Transfer complete!\n\r");
+        status = X_ERROR;  // Loop'tan çık
         break;
-      /* Abort from host. */
+        
       case X_CAN:
+        log_debug("✗ CAN received - transfer cancelled\n\r");
         status = X_ERROR;
         break;
+        
       default:
-        /* Wrong header. */
-        if (UART_OK == comm_status)
-        {
-          status = xmodem_error_handler(&error_number, X_MAX_ERRORS);
-        }
+        log_debug("ERROR: Invalid header 0x%02X\n\r", header);
+        status = xmodem_error_handler(&error_number, X_MAX_ERRORS);
         break;
     }
   }
+  
+  log_debug("=== Xmodem ended (status: %d) ===\n\r", status);
+    log_debug("=== Transfer complete ===\n\r");
+  log_debug("Total: %lu packets\n\r",
+            total_packets);
 }
 
 /**
@@ -190,91 +254,105 @@ static xmodem_status xmodem_handle_packet(uint8_t header)
   xmodem_status status = X_OK;
   uint16_t size = 0u;
 
-  /* 2 bytes for packet number, 1024 for data, 2 for CRC*/
   uint8_t received_packet_number[X_PACKET_NUMBER_SIZE];
   uint8_t received_packet_data[X_PACKET_1024_SIZE];
   uint8_t received_packet_crc[X_PACKET_CRC_SIZE];
 
-  /* Get the size of the data. */
+  // Paket boyutu belirle
   if (X_SOH == header)
-  {
     size = X_PACKET_128_SIZE;
-  }
   else if (X_STX == header)
-  {
     size = X_PACKET_1024_SIZE;
-  }
   else
-  {
-    /* Wrong header type. This shoudn't be possible... */
-    status |= X_ERROR;
-  }
+    return X_ERROR;
 
+  // Tüm paketi al
   uart_status comm_status = UART_OK;
-  /* Get the packet number, data and CRC from UART. */
   comm_status |= uart_receive(&received_packet_number[0u], X_PACKET_NUMBER_SIZE);
   comm_status |= uart_receive(&received_packet_data[0u], size);
   comm_status |= uart_receive(&received_packet_crc[0u], X_PACKET_CRC_SIZE);
-  /* Merge the two bytes of CRC. */
-  uint16_t crc_received = ((uint16_t)received_packet_crc[X_PACKET_CRC_HIGH_INDEX] << 8u) | ((uint16_t)received_packet_crc[X_PACKET_CRC_LOW_INDEX]);
-  /* We calculate it too. */
-  uint16_t crc_calculated = xmodem_calc_crc(&received_packet_data[0u], size);
 
-  /* Communication error. */
   if (UART_OK != comm_status)
   {
-    status |= X_ERROR_UART;
+    log_debug("ERROR: UART receive failed\n\r");
+    return X_ERROR_UART;
   }
 
-  /* If it is the first packet, then erase the memory. */
-  if ((X_OK == status) && (false == x_first_packet_received))
+  uint8_t received_pkt_num = received_packet_number[X_PACKET_NUMBER_INDEX];
+  
+  // ✅ KRİTİK: DUPLICATE PAKET KONTROLÜ
+  // Sender ACK görmemiş ve önceki paketi tekrar göndermiş
+  if (received_pkt_num == (uint8_t)(xmodem_packet_number - 1))
   {
+    log_debug("⚠️  DUPLICATE: Packet %d (sender didn't get ACK)\n\r", received_pkt_num);
+    // Flash'a tekrar yazma, sadece ACK gönder
+    return X_OK;
+  }
+  
+  // ✅ Beklenen paket mi?
+  if (received_pkt_num != xmodem_packet_number)
+  {
+    log_debug("ERROR: Expected pkt %d, got %d\n\r", xmodem_packet_number, received_pkt_num);
+    return X_ERROR_NUMBER;
+  }
+
+  // ✅ Complement kontrolü
+  if (255u != (received_packet_number[X_PACKET_NUMBER_INDEX] + 
+               received_packet_number[X_PACKET_NUMBER_COMPLEMENT_INDEX]))
+  {
+    log_debug("ERROR: Complement check failed (%d + %d != 255)\n\r",
+              received_packet_number[X_PACKET_NUMBER_INDEX],
+              received_packet_number[X_PACKET_NUMBER_COMPLEMENT_INDEX]);
+    return X_ERROR_NUMBER;
+  }
+
+  // ✅ CRC kontrolü
+  uint16_t crc_received = ((uint16_t)received_packet_crc[X_PACKET_CRC_HIGH_INDEX] << 8u) | 
+                          ((uint16_t)received_packet_crc[X_PACKET_CRC_LOW_INDEX]);
+  uint16_t crc_calculated = xmodem_calc_crc(&received_packet_data[0u], size);
+
+  if (crc_received != crc_calculated)
+  {
+    log_debug("ERROR: CRC mismatch! Rx:0x%04X Calc:0x%04X\n\r",
+              crc_received, crc_calculated);
+    return X_ERROR_CRC;
+  }
+
+  // ✅ İlk paket için flash sil
+  if (false == x_first_packet_received)
+  {
+    log_debug("First packet - erasing flash from 0x%08lX\n\r", FLASH_APP_START_ADDRESS);
     if (FLASH_OK == flash_erase(FLASH_APP_START_ADDRESS))
     {
       x_first_packet_received = true;
     }
     else
     {
-      status |= X_ERROR_FLASH;
+      return X_ERROR_FLASH;
     }
   }
 
-  /* Error handling and flashing. */
-  if (X_OK == status)
+  // ✅ Flash write
+  log_debug("Writing to flash: 0x%08lX (%d bytes)\n\r", xmodem_actual_flash_address, size);
+  
+  if (FLASH_OK != flash_write(xmodem_actual_flash_address, 
+                               (uint32_t*)&received_packet_data[0u], 
+                               (uint32_t)size/4u))
   {
-    if (xmodem_packet_number != received_packet_number[0u])
-    {
-      /* Packet number counter mismatch. */
-      status |= X_ERROR_NUMBER;
-    }
-    if (255u != (received_packet_number[X_PACKET_NUMBER_INDEX] + received_packet_number[X_PACKET_NUMBER_COMPLEMENT_INDEX]))
-    {
-      /* The sum of the packet number and packet number complement aren't 255. */
-      /* The sum always has to be 255. */
-      status |= X_ERROR_NUMBER;
-    }
-    if (crc_calculated != crc_received)
-    {
-      /* The calculated and received CRC are different. */
-      status |= X_ERROR_CRC;
-    }
+    log_debug("ERROR: Flash write failed\n\r");
+    return X_ERROR_FLASH;
   }
 
-    /* Do the actual flashing (if there weren't any errors). */
-    if ((X_OK == status) && (FLASH_OK != flash_write(xmodem_actual_flash_address, (uint32_t*)&received_packet_data[0u], (uint32_t)size/4u)))
-    {
-      /* Flashing error. */
-      status |= X_ERROR_FLASH;
-    }
+  // ✅ Başarılı - sayaçları artır
+  xmodem_packet_number++;
+  xmodem_actual_flash_address += size;
+  
+  log_debug("✓ Pkt %d OK | Next: %d | Total: %lu bytes\n\r", 
+            received_pkt_num,
+            xmodem_packet_number,
+            xmodem_actual_flash_address - FLASH_APP_START_ADDRESS);
 
-  /* Raise the packet number and the address counters (if there weren't any errors). */
-  if (X_OK == status)
-  {
-    xmodem_packet_number++;
-    xmodem_actual_flash_address += size;
-  }
-
-  return status;
+  return X_OK;
 }
 
 /**

@@ -10,8 +10,6 @@
 #ifndef XMODEM_H_
 #define XMODEM_H_
 
-#include "uart.h"
-#include "flash.h"
 #include "stdbool.h"
 
 /* Xmodem (128 bytes) packet format
@@ -54,6 +52,7 @@
 #define X_NAK ((uint8_t)0x15u)  /**< Not Acknowledge. */
 #define X_CAN ((uint8_t)0x18u)  /**< Cancel. */
 #define X_C   ((uint8_t)0x43u)  /**< ASCII "C" to notify the host we want to use CRC16. */
+//#define X_ERROR_CRC     0x04u  // CRC error flag
 
 /* Status report for the functions. */
 typedef enum {

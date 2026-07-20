@@ -37,10 +37,10 @@ connector Connect sysbus.usart1 uart_terminal
 emulation CreateServerSocketTerminal 1235 "xmodem" false
 connector Connect sysbus.usart3 xmodem
 
-emulation CreateCANHub "canHub"
-machine CreateSocketCANBridge "socketcan" "can0"
-connector Connect socketcan canHub
-connector Connect sysbus.can1 canHub
+# emulation CreateCANHub "canHub"
+# machine CreateSocketCANBridge "socketcan" "can0"
+# connector Connect socketcan canHub
+# connector Connect sysbus.can1 canHub
 
 machine StartGdbServer 3333 true
 
@@ -53,4 +53,4 @@ macro reset
 runMacro $reset
 start
 
-sysbus.gpioa.UserButton PressAndRelease
+# sysbus.gpioa.UserButton PressAndRelease

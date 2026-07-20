@@ -19,20 +19,20 @@ static uint8_t uart1_rx_byte;
 static uint8_t uart3_rx_byte;
 
 uint8_t xmodem_buffer[2048] = {0};
-static uint32_t xmodem_buffer_counter = 0;
+uint32_t xmodem_buffer_counter = 0;
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-    if (huart == &huart1) {
-        HAL_UART_Receive_IT(&huart1, (uint8_t *)&uart1_rx_byte, 1);
-        custom_uart_interrupt_handler(uart1_rx_byte);
-    } else if (huart == &huart3) {
-        HAL_UART_Receive_IT(&huart3, (uint8_t *)&uart3_rx_byte, 1);
-        xmodem_buffer[xmodem_buffer_counter++] = uart3_rx_byte;
-        if (xmodem_buffer_counter >= sizeof(xmodem_buffer)) {
-            xmodem_buffer_counter = 0;
-        }
-    }
-}
+// void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+//     if (huart == &huart1) {
+//         HAL_UART_Receive_IT(&huart1, (uint8_t *)&uart1_rx_byte, 1);
+//         custom_uart_interrupt_handler(uart1_rx_byte);
+//     } else if (huart == &huart3) {
+//         HAL_UART_Receive_IT(&huart3, (uint8_t *)&uart3_rx_byte, 1);
+//         xmodem_buffer[xmodem_buffer_counter++] = uart3_rx_byte;
+//         if (xmodem_buffer_counter >= sizeof(xmodem_buffer)) {
+//             xmodem_buffer_counter = 0;
+//         }
+//     }
+// }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   if (GPIO_Pin == BUTTON_Pin) {
@@ -46,6 +46,7 @@ static void uart_send(uint8_t *buffer, uint32_t len) {
 
 void board_init(void) {
   HAL_UART_Receive_IT(&huart1, (uint8_t *)&uart1_rx_byte, 1); // arm uart it
+  //HAL_UART_Receive_IT(&huart3, (uint8_t *)&uart3_rx_byte, 1); // arm uart it
 
   logging_init(uart_send, LEVEL_DEBUG);
 
@@ -131,7 +132,7 @@ static uint16_t read_adc(void) {
 
     return adc_result_in_mv;
 }
-
+#include "xmodem.h"
 void board_periodic_task(void *argument) {
 //   static uint32_t led_toggle_counter = 0;
 
@@ -157,7 +158,9 @@ void board_periodic_task(void *argument) {
   /* Infinite loop */
   for(;;) {
     // custom_uart_handler(osKernelGetTickCount());
-    // osDelay(UART_RX_TIMEOUT_MS);
+    xmodem_receive();
+    osDelay(2 * UART_RX_TIMEOUT_MS);
+    // log_debug("DODO\n");
 
     // if ((++(led_toggle_counter) % 50) == 1) {
     //   HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
@@ -171,6 +174,6 @@ void board_periodic_task(void *argument) {
     //     log_debug("read_adc: %u\n\r", read_adc());
     // }
 
-    HAL_IWDG_Refresh(&hiwdg); // feed wdt
+    // HAL_IWDG_Refresh(&hiwdg); // feed wdt
   }
 }
