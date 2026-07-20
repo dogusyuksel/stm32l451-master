@@ -10,10 +10,11 @@
 ![CMake](https://img.shields.io/badge/CMake-3.22+-red)
 ![libcsp](https://img.shields.io/badge/libcsp-CSP%20v2-blueviolet)
 ![Libcanard](https://img.shields.io/badge/Libcanard-Legacy%20UAVCAN-orange)
+![XMODEM](https://img.shields.io/badge/Protocol-XMODEM-blue)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 
 STM32L451 firmware development project with **FreeRTOS**, **CMake**,
-**Docker**, **Renode**, **SocketCAN**, **GDB**, **libcsp**, and legacy
+**Docker**, **Renode**, **SocketCAN**, **GDB**, **xmodem**, **libcsp**, and legacy
 **libcanard/UAVCAN** support.
 
 </p>
@@ -25,7 +26,8 @@ STM32L451 firmware development project with **FreeRTOS**, **CMake**,
 This repository contains an STM32L451 FreeRTOS firmware project. It combines
 STM32CubeMX-generated HAL/RTOS code, project-specific application logic,
 Renode simulation assets, SocketCAN/GDB integration, and CAN communication
-examples based on libcsp v2 and legacy libcanard.
+examples based on libcsp v2 and legacy libcanard. Besides, you can find bootloader
+specific xmodem examples as well.
 
 The project is intended for two main workflows:
 
@@ -48,6 +50,7 @@ The project is intended for two main workflows:
 - DSDL source generation for libcanard messages
 - CmBacktrace fault/backtrace support
 - Lightweight UART logging layer
+- xmodem over uart support
 
 ## Simulated Hardware
 
@@ -115,42 +118,6 @@ Load the helper aliases:
 source environment/aliases.sh
 ```
 
-Build the Docker image:
-
-```bash
-build_docker
-```
-
-Build firmware natively:
-
-```bash
-build_fw_linux
-```
-
-Build firmware inside Docker:
-
-```bash
-build_fw_in_docker
-```
-
-Build firmware for Renode:
-
-```bash
-build_fw_linux_renode
-```
-
-Start the Renode simulation:
-
-```bash
-start_renode_machine_linux
-```
-
-Start the Renode simulation inside Docker:
-
-```bash
-start_renode_machine_in_docker
-```
-
 ## Available Aliases
 
 | Alias | Description |
@@ -168,6 +135,8 @@ start_renode_machine_in_docker
 | `build_libcanard_tool_in_docker` | Build the libcanard host listener in Docker |
 | `build_libcsp_tool_in_linux` | Build the libcsp host listener natively |
 | `build_libccsp_tool_in_docker` | Build the libcsp host listener in Docker |
+| `build_bootloader_xmodem_in_linux` | Build the bootloader FW natively |
+| `build_bootloader_xmodem_in_docker` | Build the bootloader FW in Docker |
 
 ## Firmware Architecture
 
@@ -177,6 +146,9 @@ STM32CubeMX HAL/FreeRTOS
         +-- Dev/bsp.c
         |     UART logging, GPIO interrupt handling, SPI flash checks,
         |     I2C sensor probing, and RNG test logging
+        |
+        +-- Dev/xmodem.c
+        |     Handles xmodem routines
         |
         +-- Dev/libcsp2_handlers.c
         |     CSP interface, router task, and server task over CAN
@@ -310,6 +282,7 @@ This repository vendors several external components:
 - CmBacktrace: `Dev/cm_backtrace`
 - mpaland/printf: `Dev/logging`
 - libsocketcan: `tools/libcsp_listener/rust-server/libsocketcan`
+- xmodem: `Dev/xmodem.c`
 
 Some third-party code contains project-specific modifications. Search for:
 
@@ -339,5 +312,5 @@ files are kept in the relevant source directories and summarized in
 ---
 
 <p align="center">
-Using STM32 - FreeRTOS - Renode - Docker - SocketCAN - libcsp - libcanard
+Using STM32 - FreeRTOS - Renode - Docker - SocketCAN - libcsp - libcanard - xmodem
 </p>

@@ -55,7 +55,7 @@ typedef StaticTask_t osStaticThreadDef_t;
 /* USER CODE END Variables */
 /* Definitions for periodicTask */
 osThreadId_t periodicTaskHandle;
-uint32_t periodicTaskBuffer[ 4096 ];
+uint32_t periodicTaskBuffer[ 2048 ];
 osStaticThreadDef_t periodicTaskControlBlock;
 const osThreadAttr_t periodicTask_attributes = {
   .name = "periodicTask",
@@ -106,11 +106,13 @@ void MX_FREERTOS_Init(void) {
   periodicTaskHandle = osThreadNew(StartPeriodicTask, NULL, &periodicTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-// #ifdef USE_CSP_OVER_CANARD
-//   libcspv2_task_start(NULL);
-// #else
-//   libcanard_task_start(NULL);
-// #endif
+#ifndef ENABLE_XMODEM
+#ifdef USE_CSP_OVER_CANARD
+  libcspv2_task_start(NULL);
+#else
+  libcanard_task_start(NULL);
+#endif
+#endif
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -129,7 +131,12 @@ void MX_FREERTOS_Init(void) {
 void StartPeriodicTask(void *argument)
 {
   /* USER CODE BEGIN StartPeriodicTask */
+#ifdef ENABLE_XMODEM
+  // start xmodem thread here
+  xmodem_task(argument);
+#else // ENABLE_XMODEM
   board_periodic_task(argument);
+#endif // ENABLE_XMODEM
   /* USER CODE END StartPeriodicTask */
 }
 

@@ -14,25 +14,18 @@
 #include "logging.h"
 #include "stm32l4xx_hal.h"
 #include "cm_backtrace.h"
+#include "xmodem.h"
+
+#define XMODEM_DELAY 100
 
 static uint8_t uart1_rx_byte;
-static uint8_t uart3_rx_byte;
 
-uint8_t xmodem_buffer[2048] = {0};
-uint32_t xmodem_buffer_counter = 0;
-
-// void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-//     if (huart == &huart1) {
-//         HAL_UART_Receive_IT(&huart1, (uint8_t *)&uart1_rx_byte, 1);
-//         custom_uart_interrupt_handler(uart1_rx_byte);
-//     } else if (huart == &huart3) {
-//         HAL_UART_Receive_IT(&huart3, (uint8_t *)&uart3_rx_byte, 1);
-//         xmodem_buffer[xmodem_buffer_counter++] = uart3_rx_byte;
-//         if (xmodem_buffer_counter >= sizeof(xmodem_buffer)) {
-//             xmodem_buffer_counter = 0;
-//         }
-//     }
-// }
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+    if (huart == &huart1) {
+        HAL_UART_Receive_IT(&huart1, (uint8_t *)&uart1_rx_byte, 1);
+        custom_uart_interrupt_handler(uart1_rx_byte);
+    }
+}
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   if (GPIO_Pin == BUTTON_Pin) {
@@ -46,7 +39,6 @@ static void uart_send(uint8_t *buffer, uint32_t len) {
 
 void board_init(void) {
   HAL_UART_Receive_IT(&huart1, (uint8_t *)&uart1_rx_byte, 1); // arm uart it
-  //HAL_UART_Receive_IT(&huart3, (uint8_t *)&uart3_rx_byte, 1); // arm uart it
 
   logging_init(uart_send, LEVEL_DEBUG);
 
@@ -132,48 +124,91 @@ static uint16_t read_adc(void) {
 
     return adc_result_in_mv;
 }
-#include "xmodem.h"
+
+void xmodem_task(void *argument) {
+  log_debug("=== Xmodem Thread Started\n\r");
+  for(;;) {
+    xmodem_receive();
+    osDelay(XMODEM_DELAY);
+  }
+}
+
 void board_periodic_task(void *argument) {
-//   static uint32_t led_toggle_counter = 0;
+  static uint32_t led_toggle_counter = 0;
 
-//   /* Put the part is standby mode */
-//   extFlashPowerStandby();
-//   osDelay(20);
-//   /* Verify manufacturer and device ID */
-//   ExtFlash_readInfo();
-//   osDelay(20);
-//   // Put the part in low power mode
-//   extFlashPowerDown();
+  /* Put the part is standby mode */
+  extFlashPowerStandby();
+  osDelay(20);
+  /* Verify manufacturer and device ID */
+  ExtFlash_readInfo();
+  osDelay(20);
+  // Put the part in low power mode
+  extFlashPowerDown();
 
-//   uint8_t buf[2];
-//   uint8_t chipID = 0;
-//   buf[0] = 0xFC; // SendingData state
-//   buf[1] = 0x00; // Chip ID register
+  uint8_t buf[2];
+  uint8_t chipID = 0;
+  buf[0] = 0xFC; // SendingData state
+  buf[1] = 0x00; // Chip ID register
 
-//   HAL_I2C_Master_Transmit(&hi2c1, 0x6B << 1, buf, 2, 300);
-//   HAL_I2C_Master_Receive(&hi2c1, 0x6B << 1, &chipID, 1, 300);
+  HAL_I2C_Master_Transmit(&hi2c1, 0x6B << 1, buf, 2, 300);
+  HAL_I2C_Master_Receive(&hi2c1, 0x6B << 1, &chipID, 1, 300);
 
-//   log_debug("i2c1, BMA180 chipID: %u\n", chipID);
+  log_debug("i2c1, BMA180 chipID: %u\n", chipID);
 
   /* Infinite loop */
   for(;;) {
-    // custom_uart_handler(osKernelGetTickCount());
-    xmodem_receive();
-    osDelay(2 * UART_RX_TIMEOUT_MS);
-    // log_debug("DODO\n");
+    custom_uart_handler(osKernelGetTickCount());
+    osDelay(UART_RX_TIMEOUT_MS);
 
-    // if ((++(led_toggle_counter) % 50) == 1) {
-    //   HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-    // }
+    if ((++(led_toggle_counter) % 50) == 1) {
+      HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+    }
 
-    // if ((led_toggle_counter % 100) == 1) {
-    //   RNG_test();
-    // }
+    if ((led_toggle_counter % 100) == 1) {
+      RNG_test();
+    }
 
-    // if ((led_toggle_counter % 200) == 1) {
-    //     log_debug("read_adc: %u\n\r", read_adc());
-    // }
+    if ((led_toggle_counter % 200) == 1) {
+        log_debug("read_adc: %u\n\r", read_adc());
+    }
 
-    // HAL_IWDG_Refresh(&hiwdg); // feed wdt
+    HAL_IWDG_Refresh(&hiwdg); // feed wdt
   }
+}
+
+/*XMODEM functions*/
+uint8_t flash_erase(uint32_t start_address) {
+  log_debug("TODO: delete flash from starting address 0x%lX\n\r", start_address);
+  return FLASH_OK;
+}
+
+uint8_t flash_write(uint32_t address, uint32_t *buffer, uint32_t len) {
+  log_debug("Flash write to 0x%08lX (%lu words):\n\r", address, len);
+//  for (uint32_t i = 0; i < len; i++) {
+//    log_debug(" 0x%08lX", buffer[i]);
+//    if ((i + 1) % 8 == 0) {
+//      log_debug("\n\r");
+//    }
+//  }
+//  if (len % 8 != 0) {
+//    log_debug("\n\r");
+//  }
+  return FLASH_OK;
+}
+
+uart_status uart_receive(uint8_t *buffer, int32_t len) {
+  HAL_StatusTypeDef status = HAL_UART_Receive(&huart3, buffer, len, 5000);
+  if (status == HAL_OK) {
+    return UART_OK;
+  }
+  return UART_NOK;
+}
+
+uart_status uart_transmit_ch(uint8_t ch) {
+  uint8_t localbuff[1] = {ch};
+  HAL_StatusTypeDef status = HAL_UART_Transmit(&huart3, localbuff, 1, 1000);
+  if (status != HAL_OK) {
+    return UART_NOK;
+  }
+  return UART_OK;
 }

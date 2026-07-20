@@ -10,7 +10,8 @@
 #ifndef XMODEM_H_
 #define XMODEM_H_
 
-#include "stdbool.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 /* Xmodem (128 bytes) packet format
  * Byte  0:       Header
@@ -32,38 +33,49 @@
 #define X_MAX_ERRORS ((uint8_t)3u)
 
 /* Sizes of the packets. */
-#define X_PACKET_NUMBER_SIZE  ((uint16_t)2u)
-#define X_PACKET_128_SIZE     ((uint16_t)128u)
-#define X_PACKET_1024_SIZE    ((uint16_t)1024u)
-#define X_PACKET_CRC_SIZE     ((uint16_t)2u)
+#define X_PACKET_NUMBER_SIZE ((uint16_t)2u)
+#define X_PACKET_128_SIZE ((uint16_t)128u)
+#define X_PACKET_1024_SIZE ((uint16_t)1024u)
+#define X_PACKET_CRC_SIZE ((uint16_t)2u)
 
 /* Indexes inside packets. */
-#define X_PACKET_NUMBER_INDEX             ((uint16_t)0u)
-#define X_PACKET_NUMBER_COMPLEMENT_INDEX  ((uint16_t)1u)
-#define X_PACKET_CRC_HIGH_INDEX           ((uint16_t)0u)
-#define X_PACKET_CRC_LOW_INDEX            ((uint16_t)1u)
-
+#define X_PACKET_NUMBER_INDEX ((uint16_t)0u)
+#define X_PACKET_NUMBER_COMPLEMENT_INDEX ((uint16_t)1u)
+#define X_PACKET_CRC_HIGH_INDEX ((uint16_t)0u)
+#define X_PACKET_CRC_LOW_INDEX ((uint16_t)1u)
 
 /* Bytes defined by the protocol. */
-#define X_SOH ((uint8_t)0x01u)  /**< Start Of Header (128 bytes). */
-#define X_STX ((uint8_t)0x02u)  /**< Start Of Header (1024 bytes). */
-#define X_EOT ((uint8_t)0x04u)  /**< End Of Transmission. */
-#define X_ACK ((uint8_t)0x06u)  /**< Acknowledge. */
-#define X_NAK ((uint8_t)0x15u)  /**< Not Acknowledge. */
-#define X_CAN ((uint8_t)0x18u)  /**< Cancel. */
-#define X_C   ((uint8_t)0x43u)  /**< ASCII "C" to notify the host we want to use CRC16. */
+#define X_SOH ((uint8_t)0x01u) /**< Start Of Header (128 bytes). */
+#define X_STX ((uint8_t)0x02u) /**< Start Of Header (1024 bytes). */
+#define X_EOT ((uint8_t)0x04u) /**< End Of Transmission. */
+#define X_ACK ((uint8_t)0x06u) /**< Acknowledge. */
+#define X_NAK ((uint8_t)0x15u) /**< Not Acknowledge. */
+#define X_CAN ((uint8_t)0x18u) /**< Cancel. */
+#define X_C                                                                    \
+  ((uint8_t)0x43u) /**< ASCII "C" to notify the host we want to use CRC16. */
 //#define X_ERROR_CRC     0x04u  // CRC error flag
 
 /* Status report for the functions. */
 typedef enum {
-  X_OK            = 0x00u, /**< The action was successful. */
-  X_ERROR_CRC     = 0x01u, /**< CRC calculation error. */
-  X_ERROR_NUMBER  = 0x02u, /**< Packet number mismatch error. */
-  X_ERROR_UART    = 0x04u, /**< UART communication error. */
-  X_ERROR_FLASH   = 0x08u, /**< Flash related error. */
-  X_ERROR         = 0xFFu  /**< Generic error. */
+  X_OK = 0x00u,           /**< The action was successful. */
+  X_ERROR_CRC = 0x01u,    /**< CRC calculation error. */
+  X_ERROR_NUMBER = 0x02u, /**< Packet number mismatch error. */
+  X_ERROR_UART = 0x04u,   /**< UART communication error. */
+  X_ERROR_FLASH = 0x08u,  /**< Flash related error. */
+  X_ERROR = 0xFFu         /**< Generic error. */
 } xmodem_status;
 
 void xmodem_receive(void);
+
+// CUSTOM_CHANGES
+/*necessary wrappers*/
+#define FLASH_OK 0
+#define FLASH_APP_START_ADDRESS 0x8020000 // 128kb
+
+typedef enum { UART_OK = 0, UART_NOK = 1 } uart_status;
+uint8_t flash_erase(uint32_t start_address);
+uint8_t flash_write(uint32_t address, uint32_t *buffer, uint32_t len);
+uart_status uart_receive(uint8_t *buffer, int32_t len);
+uart_status uart_transmit_ch(uint8_t chchar);
 
 #endif /* XMODEM_H_ */

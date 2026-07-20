@@ -7,5 +7,6 @@
 
 void board_init(void);
 void board_periodic_task(void *argument);
+void xmodem_task(void *argument);
 
 #endif // __BSP_
