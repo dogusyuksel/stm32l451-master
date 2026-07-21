@@ -14,6 +14,9 @@
 #include "logging.h"
 #include "stm32l4xx_hal.h"
 #include "cm_backtrace.h"
+#include "xmodem.h"
+
+#define XMODEM_DELAY 100
 
 static uint8_t uart1_rx_byte;
 
@@ -122,6 +125,14 @@ static uint16_t read_adc(void) {
     return adc_result_in_mv;
 }
 
+void xmodem_task(void *argument) {
+  log_debug("=== Xmodem Thread Started\n\r");
+  for(;;) {
+    xmodem_receive();
+    osDelay(XMODEM_DELAY);
+  }
+}
+
 void board_periodic_task(void *argument) {
   static uint32_t led_toggle_counter = 0;
 
@@ -163,4 +174,41 @@ void board_periodic_task(void *argument) {
 
     HAL_IWDG_Refresh(&hiwdg); // feed wdt
   }
+}
+
+/*XMODEM functions*/
+uint8_t flash_erase(uint32_t start_address) {
+  log_debug("TODO: delete flash from starting address 0x%lX\n\r", start_address);
+  return FLASH_OK;
+}
+
+uint8_t flash_write(uint32_t address, uint32_t *buffer, uint32_t len) {
+  log_debug("Flash write to 0x%08lX (%lu words):\n\r", address, len);
+//  for (uint32_t i = 0; i < len; i++) {
+//    log_debug(" 0x%08lX", buffer[i]);
+//    if ((i + 1) % 8 == 0) {
+//      log_debug("\n\r");
+//    }
+//  }
+//  if (len % 8 != 0) {
+//    log_debug("\n\r");
+//  }
+  return FLASH_OK;
+}
+
+uart_status uart_receive(uint8_t *buffer, int32_t len) {
+  HAL_StatusTypeDef status = HAL_UART_Receive(&huart3, buffer, len, 5000);
+  if (status == HAL_OK) {
+    return UART_OK;
+  }
+  return UART_NOK;
+}
+
+uart_status uart_transmit_ch(uint8_t ch) {
+  uint8_t localbuff[1] = {ch};
+  HAL_StatusTypeDef status = HAL_UART_Transmit(&huart3, localbuff, 1, 1000);
+  if (status != HAL_OK) {
+    return UART_NOK;
+  }
+  return UART_OK;
 }

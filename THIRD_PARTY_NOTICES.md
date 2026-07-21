@@ -12,6 +12,7 @@ the project-level MIT license; each component remains under its own license.
 | CmBacktrace | `Dev/cm_backtrace` | MIT-style license in source headers |
 | mpaland/printf | `Dev/logging` | MIT license in `printf.c` and `printf.h` headers |
 | libsocketcan | `tools/libcsp_listener/rust-server/libsocketcan` | LGPL-2.1-or-later, see that directory's `LICENSE` |
+| xmodem | `Dev/Src/xmodem` |  MIT license in `xmodem.c` and `xmodem.h` headers |
 
 When redistributing binaries or source archives, keep the relevant third-party
 copyright notices and license files with the distribution.

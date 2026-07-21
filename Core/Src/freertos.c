@@ -106,10 +106,12 @@ void MX_FREERTOS_Init(void) {
   periodicTaskHandle = osThreadNew(StartPeriodicTask, NULL, &periodicTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
+#ifndef ENABLE_XMODEM
 #ifdef USE_CSP_OVER_CANARD
   libcspv2_task_start(NULL);
 #else
   libcanard_task_start(NULL);
+#endif
 #endif
   /* USER CODE END RTOS_THREADS */
 
@@ -129,7 +131,12 @@ void MX_FREERTOS_Init(void) {
 void StartPeriodicTask(void *argument)
 {
   /* USER CODE BEGIN StartPeriodicTask */
+#ifdef ENABLE_XMODEM
+  // start xmodem thread here
+  xmodem_task(argument);
+#else // ENABLE_XMODEM
   board_periodic_task(argument);
+#endif // ENABLE_XMODEM
   /* USER CODE END StartPeriodicTask */
 }
 

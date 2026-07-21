@@ -41,6 +41,13 @@ enable_language(C ASM)
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
 
+option(ENABLE_XMODEM "Enable XMODEM support" OFF)
+if(ENABLE_XMODEM)
+    target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
+        ENABLE_XMODEM
+    )
+endif()
+
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
 add_subdirectory(cmake/developercore)

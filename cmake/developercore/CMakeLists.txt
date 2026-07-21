@@ -33,6 +33,7 @@ set(Dev_Application_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/libcanard_handlers.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/libcspv2/contrib/atomics/atomics_freertos_gcc.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/libcsp2_handlers.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Dev/xmodem.c
 )
 
 # Link directories setup

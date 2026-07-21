@@ -107,6 +107,7 @@ int main(void)
   MX_CAN1_Init();
   MX_IWDG_Init();
   MX_ADC1_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
   board_init();
   /* USER CODE END 2 */
