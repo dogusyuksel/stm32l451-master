@@ -62,31 +62,17 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
 )
 
-# =========================
-# CSP CONFIGURATION
-# =========================
+include(cmake/libcsp2.cmake)
 
-set(LIBCSP_DIR ${CMAKE_SOURCE_DIR}/Dev/libcspv2)
-
-# be careful about below settings, should match with other end
-add_custom_target(libcsp_build ALL
-    COMMAND ./waf configure
-        --with-os=freertos 
-        --toolchain=arm-none-eabi- 
-        --enable-custom-changes 
-        --with-max-bind-port 61 
-        --enable-promisc 
-        --with-rtable-size 32 
-        --enable-rtable 
-        --includes 
-            ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2,${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/include,${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F,${CMAKE_SOURCE_DIR}/Core/Inc
-    COMMAND ./waf build
-    WORKING_DIRECTORY ${LIBCSP_DIR}
-    COMMENT "Building libcsp2 with waf..."
+libcsp2_build(
+    TARGET ${CMAKE_PROJECT_NAME}
+    LIBCSP_DIR ${CMAKE_SOURCE_DIR}/Dev/libcspv2
+    INCLUDES
+        ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2
+        ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/include
+        ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F
+        ${CMAKE_SOURCE_DIR}/Core/Inc
 )
-add_dependencies(${CMAKE_PROJECT_NAME} libcsp_build)
-
-# =========================
 
 if(MY_ACTIVE_PRESET STREQUAL "Linux_Renode")
     target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
@@ -94,30 +80,15 @@ if(MY_ACTIVE_PRESET STREQUAL "Linux_Renode")
     )
 endif()
 
-# CAN/DSDL generation
-set(GENERATED_DIR ${CMAKE_SOURCE_DIR}/Dev/libcanard_auto_generated)
+include(cmake/libcanard_dsdl.cmake)
 
-set(GENERATED_SOURCES
-    ${GENERATED_DIR}/nodes/node1/node1_StatusShare.c
-    ${GENERATED_DIR}/nodes/node2/node2_NodePing.c
-    ${GENERATED_DIR}/nodes/node2/node2_NodePong.c
+libcanard_generate_dsdl(
+    TARGET ${CMAKE_PROJECT_NAME}
+    DSDL_ROOT ${CMAKE_SOURCE_DIR}/Dev/nodes
+    GENERATED_DIR ${CMAKE_SOURCE_DIR}/Dev/libcanard_auto_generated
+    COMPILER ${CMAKE_SOURCE_DIR}/Dev/libcanard/dsdl_compiler/libcanard_dsdlc
+    INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/Dev/libcanard/dsdl_compiler/pyuavcan/uavcan
 )
-
-add_custom_command(
-    OUTPUT ${GENERATED_SOURCES}
-    COMMAND ${CMAKE_COMMAND} -E rm -rf ${GENERATED_DIR}
-    COMMAND ${CMAKE_SOURCE_DIR}/Dev/libcanard/dsdl_compiler/libcanard_dsdlc
-            ${CMAKE_SOURCE_DIR}/Dev/nodes
-            --incdir ${CMAKE_SOURCE_DIR}/Dev/libcanard/dsdl_compiler/pyuavcan/uavcan
-            --outdir ${GENERATED_DIR}
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMENT "Generating DSDL sources"
-)
-
-add_custom_target(generate_dsdl DEPENDS ${GENERATED_SOURCES})
-add_dependencies(${CMAKE_PROJECT_NAME} generate_dsdl)
-
-target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${GENERATED_SOURCES})
 
 # Add project symbols (macros)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
