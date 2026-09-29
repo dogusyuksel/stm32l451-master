@@ -32,6 +32,13 @@ Start the requester in another terminal. `-t` sends one `ResetInfo` request per 
 ./tools/libcanard_listener/build/can_dumper.exe -i can0 -t
 ```
 
+Enable verbose diagnostics on either side with `-v`:
+
+```bash
+./tools/libcanard_listener/build/can_dumper.exe -i can0 -v
+./tools/libcanard_listener/build/can_dumper.exe -i can0 -t -v
+```
+
 Useful overrides:
 
 ```bash
@@ -52,6 +59,23 @@ Dynamic arrays are backed by static global storage in `can_dumper.c`:
 - `fake_current_task`: current task string
 
 The requester decodes the response and prints every response field, including list lengths, list entries, register values, booleans, task names, task states, stack high-water values, CPU percentages, memory state, and scheduler state.
+
+## Verbose Diagnostics
+
+`-v` prints debug logs to `stderr` without changing the transfer flow.
+
+Verbose logs include:
+
+- encoded request/response payload length and hex dump
+- received CAN frame id, frame length, and frame data
+- reconstructed received transfer payload
+- libcanard transfer metadata: source node, transfer type, transfer id, priority, data type id, payload length, payload head/middle/tail pointers
+- libcanard allocator capacity/current/peak block counts
+- decode result bit count and decode scratch usage
+- dynamic array length checks against generated DSDL limits
+- suspicious generated-decoder pointer overlap diagnostics for nested dynamic compound arrays
+
+The overlap diagnostics are important for `ResetInfo`: this type contains dynamic arrays inside compound dynamic arrays, so if the generated decoder maps a struct array and nested string arrays onto the same scratch memory, `-v` will call that out explicitly.
 
 ## Expected Flow
 
