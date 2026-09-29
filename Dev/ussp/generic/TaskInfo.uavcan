@@ -1,0 +1,5 @@
+uint8 priority
+uint8[1] state
+uint8[<16] name
+uint16 task_stack_high_water
+uint16 percentage_time_x100
