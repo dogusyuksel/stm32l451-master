@@ -1,9 +1,10 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.22)
 project(libcanard_listener)
 
-# Libcanard
-include_directories(../../Dev/libcanard)
-include_directories(../../Dev/libcanard/drivers/socketcan)
+get_filename_component(REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
+
+include(${REPO_ROOT}/cmake/libcanard.cmake)
+include(${REPO_ROOT}/cmake/libcanard_dsdl.cmake)
 
 # Compiler configuration - supporting only Clang and GCC
 set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c99   -Wall -Wextra -Werror -m32 -pedantic -g -O0")
@@ -17,6 +18,19 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wsign-conversion -Wcast-align -Wmissing-dec
 set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -DCANARD_INTERNAL=''")
 
 add_executable(can_dumper.exe
-                can_dumper.c
-                ../../Dev/libcanard/canard.c
-                ../../Dev/libcanard/drivers/socketcan/socketcan.c)
+    can_dumper.c
+)
+
+libcanard_add_to_target(
+    TARGET can_dumper.exe
+    LIBCANARD_DIR ${REPO_ROOT}/Dev/libcanard
+    DRIVER socketcan
+)
+
+libcanard_generate_dsdl(
+    TARGET can_dumper.exe
+    DSDL_ROOT ${REPO_ROOT}/Dev/nodes
+    GENERATED_DIR ${REPO_ROOT}/Dev/libcanard_auto_generated
+    COMPILER ${REPO_ROOT}/Dev/libcanard/dsdl_compiler/libcanard_dsdlc
+    INCLUDE_DIRS ${REPO_ROOT}/Dev/libcanard/dsdl_compiler/pyuavcan/uavcan
+)

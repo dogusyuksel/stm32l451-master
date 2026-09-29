@@ -1,11 +1,9 @@
 #!/bin/bash
+set -e
 
-cd ../../Dev/libcspv2
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-./waf configure --with-os=posix --enable-examples --enable-can-socketcan --enable-if-zmqhub --with-driver-usart linux --with-max-bind-port 61 --enable-promisc --with-rtable-size 32 --enable-rtable --includes ../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2,../../Middlewares/Third_Party/FreeRTOS/Source/include,../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F,../../Core/Inc
-./waf build
-
-cp -rf build/examples/csp_server ../../tools/libcsp_listener/server.exe
-
-cd -
-
+cd "$SCRIPT_DIR"
+rm -rf build
+cmake -S . -B build
+cmake --build build
