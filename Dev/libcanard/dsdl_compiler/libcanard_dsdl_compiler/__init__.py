@@ -217,9 +217,9 @@ def type_to_c_type(t):
                     'post_cpp_type':'',
                     'cpp_type_comment':'bit len %d' % (t.bitlen, ),
                     'bitlen':t.bitlen,
-                    'max_size':get_max_size(t.bitlen, True),
+                    'max_size':get_max_size(t.bitlen, False),
                     'signedness':signedness,
-                    'saturate':False}
+                    'saturate':saturate}
             else:
                 if saturate:
                     # Do not staturate if struct field length is equal bitlen

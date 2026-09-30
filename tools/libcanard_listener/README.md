@@ -129,22 +129,6 @@ Relevant references:
 - DroneCAN `dronecan_dsdlc`: newer generator used by the DroneCAN ecosystem:
   https://dronecan.github.io/Implementations/dronecan_dsdlc/
 
-### Experimental Compiler Patch
-
-The branch also keeps an experimental patch for the old vendored compiler in:
-
-- `Dev/libcanard/dsdl_compiler/libcanard_dsdl_compiler/__init__.py`
-- `Dev/libcanard/dsdl_compiler/libcanard_dsdl_compiler/code_type_template.tmpl`
-
-That patch fixes the specific ResetInfo stress case by:
-
-- preventing saturated bool fields from being clamped to `0`
-- treating nested compound encoder/decoder return values as absolute bit offsets
-- reserving storage for dynamic arrays of compound types before decoding nested dynamic arrays inside each compound item
-
-Keep this as a diagnostic/reference commit. For production-facing work in this project, prefer the tool-only DSDL shape
-change below so the third-party compiler does not need to be patched.
-
 ## What The Fake Response Contains
 
 The responder sends a detailed fake `ResetInfo.Response`.
