@@ -1,0 +1,15 @@
+# Registers
+uint32[<=10] backtrace
+uint32 sp
+uint32 r0
+uint32 r1
+uint32 r2
+uint32 r3
+uint32 r12
+
+# Interrupt status
+uint32 psr
+uint32 primask
+truncated bool interrupt_nesting
+truncated bool valid_assert
+FreeRTOSPS state_at_reset

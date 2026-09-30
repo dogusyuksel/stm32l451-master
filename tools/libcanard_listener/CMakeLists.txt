@@ -29,8 +29,20 @@ libcanard_add_to_target(
 
 libcanard_generate_dsdl(
     TARGET can_dumper.exe
-    DSDL_ROOT ${REPO_ROOT}/Dev/nodes
+    DSDL_ROOT ${REPO_ROOT}/Dev/ussp
     GENERATED_DIR ${REPO_ROOT}/Dev/libcanard_auto_generated
     COMPILER ${REPO_ROOT}/Dev/libcanard/dsdl_compiler/libcanard_dsdlc
     INCLUDE_DIRS ${REPO_ROOT}/Dev/libcanard/dsdl_compiler/pyuavcan/uavcan
+)
+
+file(GLOB_RECURSE generated_libcanard_headers CONFIGURE_DEPENDS
+    "${REPO_ROOT}/Dev/libcanard_auto_generated/*.h"
+)
+
+target_sources(can_dumper.exe PRIVATE
+    ${generated_libcanard_headers}
+)
+
+target_include_directories(can_dumper.exe PRIVATE
+    ${REPO_ROOT}/Dev/libcanard_auto_generated
 )
