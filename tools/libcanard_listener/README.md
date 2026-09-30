@@ -16,7 +16,8 @@ If you configure from scratch:
 wsl bash -lc "cd /mnt/c/cygwin64/home/dodo-/stm32l451-master/tools/libcanard_listener && cmake -S . -B build && cmake --build build"
 ```
 
-The CMake target regenerates DSDL files from `Dev/ussp`, compiles the generated `.c` files, and includes generated headers from `Dev/libcanard_auto_generated`.
+The CMake target regenerates DSDL files from `Dev/ussp`, compiles the generated `.c` files, and includes generated
+headers from `Dev/libcanard_auto_generated`.
 
 ## Enable `vcan0` In WSL
 
@@ -93,9 +94,9 @@ compound types, and those compound types contain their own dynamic arrays:
 - `ResetInfo.watchdog.blocking_tasks[]` -> `TaskInfo.name[]`
 - `ResetInfo.assert_info.state_at_reset.system_tasks[]` -> `TaskInfo.name[]`
 
-Do not patch the third-party DSDL compiler just for this tool. If `ResetInfo` needs to be made safer for the current
-compiler, prefer changing the DSDL shape so it avoids dynamic arrays of compound types. The recommended compatible
-layout is fixed slots plus an explicit count:
+Do not patch the third-party DSDL compiler just for this tool. The active solution changes the existing DSDL files under
+`Dev/ussp/generic` so `ResetInfo` avoids dynamic arrays of compound types. The compatible layout is fixed slots plus an
+explicit count:
 
 ```text
 uint8 causes_len
@@ -118,6 +119,9 @@ TaskInfo reset_task3
 This keeps the nested `ResetReason.name` and `TaskInfo.name` dynamic strings, but removes the problematic
 `CompoundType[<N]` dynamic arrays around them.
 
+The DSDL also marks bool fields as `truncated bool`. This avoids the old compiler's saturated-bool code path,
+which can clamp true values to `0`.
+
 Relevant references:
 
 - OpenCyphal forum: old libcanard DSDL compiler has multiple known bugs and was removed from upstream:
@@ -133,12 +137,18 @@ Relevant references:
 
 The responder sends a detailed fake `ResetInfo.Response`.
 
-Dynamic arrays are backed by static global storage in `can_dumper.c`:
+Compound lists use fixed DSDL slots plus explicit length fields:
 
-- `fake_causes`: 3 `ResetReason` entries
-- `fake_watchdog_tasks`: 3 watchdog blocking `TaskInfo` entries
+- `causes_len` with `cause0`, `cause1`, `cause2`
+- `watchdog.blocking_tasks_len` with `blocking_task0`, `blocking_task1`, `blocking_task2`
+- `assert_info.state_at_reset.system_tasks_len` with `system_task0`, `system_task1`, `system_task2`, `system_task3`
+
+Primitive/string dynamic arrays are still backed by static global storage in `can_dumper.c`:
+
+- `fake_cause_names`: 3 `ResetReason.name` buffers
+- `fake_watchdog_task_names`: 3 watchdog `TaskInfo.name` buffers
 - `fake_backtrace`: 5 backtrace addresses
-- `fake_reset_tasks`: 4 `state_at_reset.system_tasks` entries
+- `fake_reset_task_names`: 4 reset-state `TaskInfo.name` buffers
 - `fake_current_task`: current task string
 
 The requester decodes the response and prints every response field, including list lengths, list entries, register values, booleans, task names, task states, stack high-water values, CPU percentages, memory state, and scheduler state.
@@ -155,10 +165,11 @@ Verbose logs include:
 - libcanard transfer metadata: source node, transfer type, transfer id, priority, data type id, payload length, payload head/middle/tail pointers
 - libcanard allocator capacity/current/peak block counts
 - decode result bit count and decode scratch usage
-- dynamic array length checks against generated DSDL limits
-- suspicious generated-decoder pointer overlap diagnostics for nested dynamic compound arrays
+- fixed slot length checks for the DSDL layout
+- dynamic string/backtrace pointer checks against the decode scratch buffer
 
-The overlap diagnostics are important for `ResetInfo`: this type contains dynamic arrays inside compound dynamic arrays, so if the generated decoder maps a struct array and nested string arrays onto the same scratch memory, `-v` will call that out explicitly.
+The pointer diagnostics are useful for `ResetInfo`: if a decoded dynamic string or backtrace pointer does not point into
+the decode scratch buffer, `-v` calls that out explicitly.
 
 ## Expected Flow
 

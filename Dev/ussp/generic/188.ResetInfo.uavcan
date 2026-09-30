@@ -1,6 +1,9 @@
 uint8 reset_reg
 ---
-ResetReason[<8] causes
+uint8 causes_len
+ResetReason cause0
+ResetReason cause1
+ResetReason cause2
 WatchdogMonitor watchdog
 AssertInfo assert_info
 uint8 success

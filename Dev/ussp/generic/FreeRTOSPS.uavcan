@@ -1,9 +1,13 @@
 # Tasks
-TaskInfo[<=15] system_tasks
+uint8 system_tasks_len
+TaskInfo system_task0
+TaskInfo system_task1
+TaskInfo system_task2
+TaskInfo system_task3
 uint8[<=16] current_task
 
-#State
+# State
 uint32 memory_free
-bool scheduler_running
-bool in_task
+truncated bool scheduler_running
+truncated bool in_task
 uint8 num_tasks

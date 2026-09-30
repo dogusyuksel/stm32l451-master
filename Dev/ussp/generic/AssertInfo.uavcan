@@ -10,6 +10,6 @@ uint32 r12
 # Interrupt status
 uint32 psr
 uint32 primask
-bool interrupt_nesting
-bool valid_assert
+truncated bool interrupt_nesting
+truncated bool valid_assert
 FreeRTOSPS state_at_reset
