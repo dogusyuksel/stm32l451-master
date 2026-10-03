@@ -35,6 +35,7 @@ static CanardInstance canard;
 static uint8_t canard_memory_pool[8192];
 static uint8_t decode_scratch[DECODE_SCRATCH_SIZE];
 static size_t decode_scratch_used = 0U;
+uint8_t canard_dsdl_resetinfo_fix_enabled = 0U;
 
 static ussp_generic_ResetReason fake_causes[FAKE_CAUSE_COUNT];
 static uint8_t fake_cause_name_0[USSP_GENERIC_RESETREASON_NAME_MAX_LENGTH];
@@ -128,6 +129,16 @@ static void verbose_log_pool_stats(const char *label) {
     verbose_log("%s pool: capacity_blocks=%u current_usage_blocks=%u peak_usage_blocks=%u", label,
                 (unsigned)stats.capacity_blocks, (unsigned)stats.current_usage_blocks,
                 (unsigned)stats.peak_usage_blocks);
+}
+
+static uint8_t enter_resetinfo_dsdl_fix_scope(void) {
+    const uint8_t previous = canard_dsdl_resetinfo_fix_enabled;
+    canard_dsdl_resetinfo_fix_enabled = 1U;
+    return previous;
+}
+
+static void leave_resetinfo_dsdl_fix_scope(uint8_t previous) {
+    canard_dsdl_resetinfo_fix_enabled = previous;
 }
 
 static bool ptr_in_decode_scratch(const void *ptr, size_t len) {
@@ -356,7 +367,9 @@ static uint16_t encode_reset_info_response(uint8_t *buffer) {
 static int32_t decode_reset_info_request(const CanardRxTransfer *transfer, ussp_generic_ResetInfoRequest *request) {
     uint8_t *decode_ptr = decode_scratch;
     memset(decode_scratch, 0, sizeof(decode_scratch));
+    const uint8_t previous_fix_scope = enter_resetinfo_dsdl_fix_scope();
     const int32_t res = ussp_generic_ResetInfoRequest_decode(transfer, transfer->payload_len, request, &decode_ptr);
+    leave_resetinfo_dsdl_fix_scope(previous_fix_scope);
     decode_scratch_used = (size_t)(decode_ptr - decode_scratch);
     verbose_log("decoded ResetInfo request: res_bits=%ld payload_len=%u scratch_used=%lu reset_reg=0x%02X",
                 (long)res, (unsigned)transfer->payload_len, (unsigned long)decode_scratch_used,
@@ -367,7 +380,9 @@ static int32_t decode_reset_info_request(const CanardRxTransfer *transfer, ussp_
 static int32_t decode_reset_info_response(const CanardRxTransfer *transfer, ussp_generic_ResetInfoResponse *response) {
     uint8_t *decode_ptr = decode_scratch;
     memset(decode_scratch, 0, sizeof(decode_scratch));
+    const uint8_t previous_fix_scope = enter_resetinfo_dsdl_fix_scope();
     const int32_t res = ussp_generic_ResetInfoResponse_decode(transfer, transfer->payload_len, response, &decode_ptr);
+    leave_resetinfo_dsdl_fix_scope(previous_fix_scope);
     decode_scratch_used = (size_t)(decode_ptr - decode_scratch);
     verbose_log("decoded ResetInfo response: res_bits=%ld payload_len=%u scratch_used=%lu scratch_capacity=%u",
                 (long)res, (unsigned)transfer->payload_len, (unsigned long)decode_scratch_used,

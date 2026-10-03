@@ -103,8 +103,9 @@ compound types, and those compound types contain their own dynamic arrays:
 - `ResetInfo.watchdog.blocking_tasks[]` -> `TaskInfo.name[]`
 - `ResetInfo.assert_info.state_at_reset.system_tasks[]` -> `TaskInfo.name[]`
 
-This branch intentionally keeps `ResetInfo` in its original complex dynamic form. The active solution patches the
-vendored compiler so it can safely generate code for this DSDL shape:
+This branch intentionally keeps `ResetInfo` in its original complex dynamic form. The active solution keeps the vendored
+compiler backward-compatible for the two compatibility-sensitive decode paths by selecting the new behavior only while
+this tool is decoding a `ResetInfo` transfer:
 
 ```text
 ResetReason[<8] causes
@@ -127,21 +128,28 @@ Relevant references:
 - DroneCAN `dronecan_dsdlc`: newer generator used by the DroneCAN ecosystem:
   https://dronecan.github.io/Implementations/dronecan_dsdlc/
 
-### Compiler Patch
+### Selective Compiler Patch
 
-The branch patches the old vendored compiler in:
+The branch patches the old vendored compiler template in:
 
 - `Dev/libcanard/dsdl_compiler/libcanard_dsdl_compiler/__init__.py`
 - `Dev/libcanard/dsdl_compiler/libcanard_dsdl_compiler/code_type_template.tmpl`
 
-The patch fixes the specific ResetInfo stress case by:
+The earlier compiler fixes are applied directly:
 
-- preventing saturated bool fields from being clamped to `0`
-- treating nested compound encoder/decoder return values as absolute bit offsets
-- reserving storage for dynamic arrays of compound types before decoding nested dynamic arrays inside each compound item
+- saturated bool fields are no longer clamped to `0`
+- nested compound encoder/decoder return values are treated as absolute bit offsets
+- dynamic arrays of compound types reserve parent storage before nested dynamic fields are decoded
 
-Because this is compiler-wide generated-code behavior, compare regenerated files carefully before applying the same
-patch to older production branches.
+Two compatibility-sensitive decode behaviors are runtime-gated:
+
+- advancing `dyn_arr_buf` after decoding primitive dynamic-array items
+- passing `0` instead of the parent `payload_len` to nested compound-field decoders
+
+Generated code provides a weak default `canard_dsdl_resetinfo_fix_enabled = 0`. `can_dumper.c` provides the real symbol
+and sets it only while decoding `ResetInfo` request/response transfers, so a shared type such as `TaskInfo` uses the
+new path inside the `ResetInfo` decode call chain but keeps the old path when decoded by any other package in the same
+executable.
 
 ## What The Fake Response Contains
 
