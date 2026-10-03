@@ -68,7 +68,9 @@ extern "C" {
 #define CANARD_ERROR_INTERNAL                       9
 
 /// The size of a memory block in bytes.
-#define CANARD_MEM_BLOCK_SIZE                       32U
+#ifndef CANARD_MEM_BLOCK_SIZE
+# define CANARD_MEM_BLOCK_SIZE                      32U
+#endif
 
 /// This will be changed when the support for CAN FD is added
 #define CANARD_CAN_FRAME_MAX_DATA_LEN               8U
@@ -235,7 +237,7 @@ struct CanardRxState
 
     uint8_t buffer_head[];
 };
-CANARD_STATIC_ASSERT(offsetof(CanardRxState, buffer_head) <= 28, "Invalid memory layout");
+CANARD_STATIC_ASSERT(offsetof(CanardRxState, buffer_head) <= (CANARD_MEM_BLOCK_SIZE - 4U), "Invalid memory layout");
 CANARD_STATIC_ASSERT(CANARD_MULTIFRAME_RX_PAYLOAD_HEAD_SIZE >= 4, "Invalid memory layout");
 
 /**

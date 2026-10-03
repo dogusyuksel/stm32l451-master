@@ -780,7 +780,7 @@ uint16_t canardConvertNativeFloatToFloat16(float value)
     const union FP32 f16inf = { 31UL << 23U };
     const union FP32 magic = { 15UL << 23U };
     const uint32_t sign_mask = 0x80000000UL;
-    const uint32_t round_mask = ~0xFFFUL;
+    const uint32_t round_mask = UINT32_MAX & ~0xFFFUL;
 
     union FP32 in;
     in.f = value;

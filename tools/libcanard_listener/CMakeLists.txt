@@ -6,8 +6,14 @@ get_filename_component(REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
 include(${REPO_ROOT}/cmake/libcanard.cmake)
 include(${REPO_ROOT}/cmake/libcanard_dsdl.cmake)
 
+option(LIBCANARD_LISTENER_32BIT "Build libcanard_listener as a 32-bit executable" OFF)
+
 # Compiler configuration - supporting only Clang and GCC
-set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c99   -Wall -Wextra -Werror -m32 -pedantic -g -O0")
+set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c99   -Wall -Wextra -Werror -pedantic -g -O0")
+
+if(LIBCANARD_LISTENER_32BIT)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
+endif()
 
 # C warnings
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wdouble-promotion -Wswitch-enum -Wfloat-equal -Wundef")
@@ -46,3 +52,7 @@ target_sources(can_dumper.exe PRIVATE
 target_include_directories(can_dumper.exe PRIVATE
     ${REPO_ROOT}/Dev/libcanard_auto_generated
 )
+
+if(NOT LIBCANARD_LISTENER_32BIT)
+    target_compile_definitions(can_dumper.exe PRIVATE CANARD_MEM_BLOCK_SIZE=64U)
+endif()

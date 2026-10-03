@@ -25,9 +25,6 @@ static bool VERBOSE = false;
 #define VERSION "00.01"
 #define CLIENT_DEFAULT_NODE_ID 6U
 #define DECODE_SCRATCH_SIZE 8192U
-#define RESETINFO_CAUSE_SLOT_COUNT 3U
-#define WATCHDOG_TASK_SLOT_COUNT 3U
-#define RESET_TASK_SLOT_COUNT 4U
 #define FAKE_CAUSE_COUNT 3U
 #define FAKE_WATCHDOG_TASK_COUNT 3U
 #define FAKE_BACKTRACE_COUNT 5U
@@ -39,6 +36,7 @@ static uint8_t canard_memory_pool[8192];
 static uint8_t decode_scratch[DECODE_SCRATCH_SIZE];
 static size_t decode_scratch_used = 0U;
 
+static ussp_generic_ResetReason fake_causes[FAKE_CAUSE_COUNT];
 static uint8_t fake_cause_name_0[USSP_GENERIC_RESETREASON_NAME_MAX_LENGTH];
 static uint8_t fake_cause_name_1[USSP_GENERIC_RESETREASON_NAME_MAX_LENGTH];
 static uint8_t fake_cause_name_2[USSP_GENERIC_RESETREASON_NAME_MAX_LENGTH];
@@ -48,6 +46,7 @@ static uint8_t *const fake_cause_names[FAKE_CAUSE_COUNT] = {
     fake_cause_name_2,
 };
 
+static ussp_generic_TaskInfo fake_watchdog_tasks[FAKE_WATCHDOG_TASK_COUNT];
 static uint8_t fake_watchdog_task_name_0[USSP_GENERIC_TASKINFO_NAME_MAX_LENGTH];
 static uint8_t fake_watchdog_task_name_1[USSP_GENERIC_TASKINFO_NAME_MAX_LENGTH];
 static uint8_t fake_watchdog_task_name_2[USSP_GENERIC_TASKINFO_NAME_MAX_LENGTH];
@@ -59,6 +58,7 @@ static uint8_t *const fake_watchdog_task_names[FAKE_WATCHDOG_TASK_COUNT] = {
 
 static uint32_t fake_backtrace[FAKE_BACKTRACE_COUNT];
 
+static ussp_generic_TaskInfo fake_reset_tasks[FAKE_RESET_TASK_COUNT];
 static uint8_t fake_reset_task_name_0[USSP_GENERIC_TASKINFO_NAME_MAX_LENGTH];
 static uint8_t fake_reset_task_name_1[USSP_GENERIC_TASKINFO_NAME_MAX_LENGTH];
 static uint8_t fake_reset_task_name_2[USSP_GENERIC_TASKINFO_NAME_MAX_LENGTH];
@@ -144,6 +144,18 @@ static bool ptr_in_decode_scratch(const void *ptr, size_t len) {
     return len <= (size_t)(end - p);
 }
 
+static bool ranges_overlap(const void *a, size_t a_len, const void *b, size_t b_len) {
+    const uintptr_t a_start = (uintptr_t)a;
+    const uintptr_t b_start = (uintptr_t)b;
+    const uintptr_t a_end = a_start + a_len;
+    const uintptr_t b_end = b_start + b_len;
+
+    if (!a || !b || a_len == 0U || b_len == 0U) {
+        return false;
+    }
+    return a_start < b_end && b_start < a_end;
+}
+
 static uint8_t clamp_u8_len(const char *field_name, uint8_t len, uint8_t max_len) {
     if (len > max_len) {
         verbose_log("invalid %s len=%u max=%u; clamping print to max", field_name, (unsigned)len,
@@ -161,96 +173,6 @@ static void set_u8_array(uint8_t *dst, uint8_t *len, const char *text, uint8_t m
     *len = (uint8_t)copy_len;
 }
 
-static ussp_generic_ResetReason *reset_info_cause_slot(ussp_generic_ResetInfoResponse *response, uint8_t index) {
-    switch (index) {
-    case 0:
-        return &response->cause0;
-    case 1:
-        return &response->cause1;
-    case 2:
-        return &response->cause2;
-    default:
-        return NULL;
-    }
-}
-
-static const ussp_generic_ResetReason *reset_info_cause_slot_const(const ussp_generic_ResetInfoResponse *response,
-                                                                   uint8_t index) {
-    switch (index) {
-    case 0:
-        return &response->cause0;
-    case 1:
-        return &response->cause1;
-    case 2:
-        return &response->cause2;
-    default:
-        return NULL;
-    }
-}
-
-static ussp_generic_TaskInfo *watchdog_task_slot(ussp_generic_WatchdogMonitor *watchdog, uint8_t index) {
-    switch (index) {
-    case 0:
-        return &watchdog->blocking_task0;
-    case 1:
-        return &watchdog->blocking_task1;
-    case 2:
-        return &watchdog->blocking_task2;
-    default:
-        return NULL;
-    }
-}
-
-static const ussp_generic_TaskInfo *watchdog_task_slot_const(const ussp_generic_WatchdogMonitor *watchdog,
-                                                            uint8_t index) {
-    switch (index) {
-    case 0:
-        return &watchdog->blocking_task0;
-    case 1:
-        return &watchdog->blocking_task1;
-    case 2:
-        return &watchdog->blocking_task2;
-    default:
-        return NULL;
-    }
-}
-
-static ussp_generic_TaskInfo *reset_task_slot(ussp_generic_FreeRTOSPS *state, uint8_t index) {
-    switch (index) {
-    case 0:
-        return &state->system_task0;
-    case 1:
-        return &state->system_task1;
-    case 2:
-        return &state->system_task2;
-    case 3:
-        return &state->system_task3;
-    default:
-        return NULL;
-    }
-}
-
-static const ussp_generic_TaskInfo *reset_task_slot_const(const ussp_generic_FreeRTOSPS *state, uint8_t index) {
-    switch (index) {
-    case 0:
-        return &state->system_task0;
-    case 1:
-        return &state->system_task1;
-    case 2:
-        return &state->system_task2;
-    case 3:
-        return &state->system_task3;
-    default:
-        return NULL;
-    }
-}
-
-static void fill_reset_reason(ussp_generic_ResetReason *reason, const char *name, uint8_t *name_storage) {
-    memset(reason, 0, sizeof(*reason));
-    reason->name.data = name_storage;
-    set_u8_array(name_storage, &reason->name.len, name, USSP_GENERIC_RESETREASON_NAME_MAX_LENGTH);
-}
-
 static void fill_task(ussp_generic_TaskInfo *task, uint8_t priority, char state, const char *name,
                       uint16_t stack_high_water, uint16_t cpu_x100, uint8_t *name_storage) {
     memset(task, 0, sizeof(*task));
@@ -264,17 +186,20 @@ static void fill_task(ussp_generic_TaskInfo *task, uint8_t priority, char state,
 
 static void fill_fake_reset_info_response(ussp_generic_ResetInfoResponse *response) {
     memset(response, 0, sizeof(*response));
+    memset(fake_causes, 0, sizeof(fake_causes));
+    memset(fake_watchdog_tasks, 0, sizeof(fake_watchdog_tasks));
+    memset(fake_reset_tasks, 0, sizeof(fake_reset_tasks));
 
-    fill_reset_reason(reset_info_cause_slot(response, 0), "power_on", fake_cause_names[0]);
-    fill_reset_reason(reset_info_cause_slot(response, 1), "watchdog", fake_cause_names[1]);
-    fill_reset_reason(reset_info_cause_slot(response, 2), "assert", fake_cause_names[2]);
+    fake_causes[0].name.data = fake_cause_names[0];
+    set_u8_array(fake_cause_names[0], &fake_causes[0].name.len, "power_on", USSP_GENERIC_RESETREASON_NAME_MAX_LENGTH);
+    fake_causes[1].name.data = fake_cause_names[1];
+    set_u8_array(fake_cause_names[1], &fake_causes[1].name.len, "watchdog", USSP_GENERIC_RESETREASON_NAME_MAX_LENGTH);
+    fake_causes[2].name.data = fake_cause_names[2];
+    set_u8_array(fake_cause_names[2], &fake_causes[2].name.len, "assert", USSP_GENERIC_RESETREASON_NAME_MAX_LENGTH);
 
-    fill_task(watchdog_task_slot(&response->watchdog, 0), 3, 'B', "can_rx", 312, 1250,
-              fake_watchdog_task_names[0]);
-    fill_task(watchdog_task_slot(&response->watchdog, 1), 4, 'R', "logger", 488, 410,
-              fake_watchdog_task_names[1]);
-    fill_task(watchdog_task_slot(&response->watchdog, 2), 7, 'S', "storage", 144, 845,
-              fake_watchdog_task_names[2]);
+    fill_task(&fake_watchdog_tasks[0], 3, 'B', "can_rx", 312, 1250, fake_watchdog_task_names[0]);
+    fill_task(&fake_watchdog_tasks[1], 4, 'R', "logger", 488, 410, fake_watchdog_task_names[1]);
+    fill_task(&fake_watchdog_tasks[2], 7, 'S', "storage", 144, 845, fake_watchdog_task_names[2]);
 
     fake_backtrace[0] = 0x08001234U;
     fake_backtrace[1] = 0x08004567U;
@@ -282,17 +207,15 @@ static void fill_fake_reset_info_response(ussp_generic_ResetInfoResponse *respon
     fake_backtrace[3] = 0x0800ABCDU;
     fake_backtrace[4] = 0x0800F00DU;
 
-    fill_task(reset_task_slot(&response->assert_info.state_at_reset, 0), 2, 'R', "idle", 900, 5,
-              fake_reset_task_names[0]);
-    fill_task(reset_task_slot(&response->assert_info.state_at_reset, 1), 5, 'B', "telemetry", 240, 2120,
-              fake_reset_task_names[1]);
-    fill_task(reset_task_slot(&response->assert_info.state_at_reset, 2), 6, 'S', "uavcan", 128, 3300,
-              fake_reset_task_names[2]);
-    fill_task(reset_task_slot(&response->assert_info.state_at_reset, 3), 8, 'R', "diagnostics", 384, 650,
-              fake_reset_task_names[3]);
+    fill_task(&fake_reset_tasks[0], 2, 'R', "idle", 900, 5, fake_reset_task_names[0]);
+    fill_task(&fake_reset_tasks[1], 5, 'B', "telemetry", 240, 2120, fake_reset_task_names[1]);
+    fill_task(&fake_reset_tasks[2], 6, 'S', "uavcan", 128, 3300, fake_reset_task_names[2]);
+    fill_task(&fake_reset_tasks[3], 8, 'R', "diagnostics", 384, 650, fake_reset_task_names[3]);
 
-    response->causes_len = FAKE_CAUSE_COUNT;
-    response->watchdog.blocking_tasks_len = FAKE_WATCHDOG_TASK_COUNT;
+    response->causes.len = FAKE_CAUSE_COUNT;
+    response->causes.data = fake_causes;
+    response->watchdog.blocking_tasks.len = FAKE_WATCHDOG_TASK_COUNT;
+    response->watchdog.blocking_tasks.data = fake_watchdog_tasks;
     response->assert_info.backtrace.len = FAKE_BACKTRACE_COUNT;
     response->assert_info.backtrace.data = fake_backtrace;
     response->assert_info.sp = 0x20004FF0U;
@@ -305,41 +228,20 @@ static void fill_fake_reset_info_response(ussp_generic_ResetInfoResponse *respon
     response->assert_info.primask = 0U;
     response->assert_info.interrupt_nesting = true;
     response->assert_info.valid_assert = true;
-    response->assert_info.state_at_reset.system_tasks_len = FAKE_RESET_TASK_COUNT;
+    response->assert_info.state_at_reset.system_tasks.len = FAKE_RESET_TASK_COUNT;
+    response->assert_info.state_at_reset.system_tasks.data = fake_reset_tasks;
     response->assert_info.state_at_reset.current_task.data = fake_current_task;
     set_u8_array(fake_current_task, &response->assert_info.state_at_reset.current_task.len, "uavcan",
                  USSP_GENERIC_FREERTOSPS_CURRENT_TASK_MAX_LENGTH);
     response->assert_info.state_at_reset.memory_free = 54321U;
     response->assert_info.state_at_reset.scheduler_running = true;
     response->assert_info.state_at_reset.in_task = true;
-    response->assert_info.state_at_reset.num_tasks = response->assert_info.state_at_reset.system_tasks_len;
+    response->assert_info.state_at_reset.num_tasks = FAKE_RESET_TASK_COUNT;
     response->success = 1;
-}
-
-static bool validate_reset_reason_for_encode(const char *field_name, const ussp_generic_ResetReason *reason) {
-    bool valid = true;
-    if (!reason) {
-        fprintf(stderr, "%s slot is NULL\n", field_name);
-        return false;
-    }
-    if (reason->name.len > USSP_GENERIC_RESETREASON_NAME_MAX_LENGTH) {
-        fprintf(stderr, "%s.name.len=%u exceeds max %u\n", field_name, (unsigned)reason->name.len,
-                (unsigned)USSP_GENERIC_RESETREASON_NAME_MAX_LENGTH);
-        valid = false;
-    }
-    if (reason->name.len > 0U && !reason->name.data) {
-        fprintf(stderr, "%s.name.data is NULL while len=%u\n", field_name, (unsigned)reason->name.len);
-        valid = false;
-    }
-    return valid;
 }
 
 static bool validate_task_for_encode(const char *field_name, const ussp_generic_TaskInfo *task) {
     bool valid = true;
-    if (!task) {
-        fprintf(stderr, "%s slot is NULL\n", field_name);
-        return false;
-    }
     if (task->name.len > USSP_GENERIC_TASKINFO_NAME_MAX_LENGTH) {
         fprintf(stderr, "%s.name.len=%u exceeds max %u\n", field_name, (unsigned)task->name.len,
                 (unsigned)USSP_GENERIC_TASKINFO_NAME_MAX_LENGTH);
@@ -355,23 +257,34 @@ static bool validate_task_for_encode(const char *field_name, const ussp_generic_
 static bool validate_fake_reset_info_response_for_encode(const ussp_generic_ResetInfoResponse *response) {
     bool valid = true;
 
-    if (response->causes_len > RESETINFO_CAUSE_SLOT_COUNT) {
-        fprintf(stderr, "causes.len=%u exceeds max %u\n", (unsigned)response->causes_len,
-                (unsigned)RESETINFO_CAUSE_SLOT_COUNT);
+    if (response->causes.len > USSP_GENERIC_RESETINFO_RESPONSE_CAUSES_MAX_LENGTH) {
+        fprintf(stderr, "causes.len=%u exceeds max %u\n", (unsigned)response->causes.len,
+                (unsigned)USSP_GENERIC_RESETINFO_RESPONSE_CAUSES_MAX_LENGTH);
         valid = false;
     }
-    for (uint8_t i = 0; i < response->causes_len && i < RESETINFO_CAUSE_SLOT_COUNT; i++) {
-        valid = validate_reset_reason_for_encode("causes", reset_info_cause_slot_const(response, i)) && valid;
+    for (uint8_t i = 0; i < response->causes.len && i < USSP_GENERIC_RESETINFO_RESPONSE_CAUSES_MAX_LENGTH; i++) {
+        if (response->causes.data[i].name.len > USSP_GENERIC_RESETREASON_NAME_MAX_LENGTH) {
+            fprintf(stderr, "causes[%u].name.len=%u exceeds max %u\n", (unsigned)i,
+                    (unsigned)response->causes.data[i].name.len, (unsigned)USSP_GENERIC_RESETREASON_NAME_MAX_LENGTH);
+            valid = false;
+        }
+        if (response->causes.data[i].name.len > 0U && !response->causes.data[i].name.data) {
+            fprintf(stderr, "causes[%u].name.data is NULL while len=%u\n", (unsigned)i,
+                    (unsigned)response->causes.data[i].name.len);
+            valid = false;
+        }
     }
 
-    if (response->watchdog.blocking_tasks_len > WATCHDOG_TASK_SLOT_COUNT) {
+    if (response->watchdog.blocking_tasks.len > USSP_GENERIC_WATCHDOGMONITOR_BLOCKING_TASKS_MAX_LENGTH) {
         fprintf(stderr, "watchdog.blocking_tasks.len=%u exceeds max %u\n",
-                (unsigned)response->watchdog.blocking_tasks_len, (unsigned)WATCHDOG_TASK_SLOT_COUNT);
+                (unsigned)response->watchdog.blocking_tasks.len,
+                (unsigned)USSP_GENERIC_WATCHDOGMONITOR_BLOCKING_TASKS_MAX_LENGTH);
         valid = false;
     }
-    for (uint8_t i = 0; i < response->watchdog.blocking_tasks_len && i < WATCHDOG_TASK_SLOT_COUNT; i++) {
-        valid = validate_task_for_encode("watchdog.blocking_tasks",
-                                         watchdog_task_slot_const(&response->watchdog, i)) &&
+    for (uint8_t i = 0; i < response->watchdog.blocking_tasks.len &&
+                        i < USSP_GENERIC_WATCHDOGMONITOR_BLOCKING_TASKS_MAX_LENGTH;
+         i++) {
+        valid = validate_task_for_encode("watchdog.blocking_tasks", &response->watchdog.blocking_tasks.data[i]) &&
                 valid;
     }
 
@@ -381,14 +294,17 @@ static bool validate_fake_reset_info_response_for_encode(const ussp_generic_Rese
                 (unsigned)USSP_GENERIC_ASSERTINFO_BACKTRACE_MAX_LENGTH);
         valid = false;
     }
-    if (response->assert_info.state_at_reset.system_tasks_len > RESET_TASK_SLOT_COUNT) {
+    if (response->assert_info.state_at_reset.system_tasks.len > USSP_GENERIC_FREERTOSPS_SYSTEM_TASKS_MAX_LENGTH) {
         fprintf(stderr, "state_at_reset.system_tasks.len=%u exceeds max %u\n",
-                (unsigned)response->assert_info.state_at_reset.system_tasks_len, (unsigned)RESET_TASK_SLOT_COUNT);
+                (unsigned)response->assert_info.state_at_reset.system_tasks.len,
+                (unsigned)USSP_GENERIC_FREERTOSPS_SYSTEM_TASKS_MAX_LENGTH);
         valid = false;
     }
-    for (uint8_t i = 0; i < response->assert_info.state_at_reset.system_tasks_len && i < RESET_TASK_SLOT_COUNT; i++) {
+    for (uint8_t i = 0; i < response->assert_info.state_at_reset.system_tasks.len &&
+                        i < USSP_GENERIC_FREERTOSPS_SYSTEM_TASKS_MAX_LENGTH;
+         i++) {
         valid = validate_task_for_encode("state_at_reset.system_tasks",
-                                         reset_task_slot_const(&response->assert_info.state_at_reset, i)) &&
+                                         &response->assert_info.state_at_reset.system_tasks.data[i]) &&
                 valid;
     }
     if (response->assert_info.state_at_reset.current_task.len > USSP_GENERIC_FREERTOSPS_CURRENT_TASK_MAX_LENGTH) {
@@ -397,10 +313,10 @@ static bool validate_fake_reset_info_response_for_encode(const ussp_generic_Rese
                 (unsigned)USSP_GENERIC_FREERTOSPS_CURRENT_TASK_MAX_LENGTH);
         valid = false;
     }
-    if (response->assert_info.state_at_reset.num_tasks != response->assert_info.state_at_reset.system_tasks_len) {
+    if (response->assert_info.state_at_reset.num_tasks != response->assert_info.state_at_reset.system_tasks.len) {
         fprintf(stderr, "state_at_reset.num_tasks=%u does not match system_tasks.len=%u\n",
                 (unsigned)response->assert_info.state_at_reset.num_tasks,
-                (unsigned)response->assert_info.state_at_reset.system_tasks_len);
+                (unsigned)response->assert_info.state_at_reset.system_tasks.len);
         valid = false;
     }
 
@@ -429,9 +345,9 @@ static uint16_t encode_reset_info_response(uint8_t *buffer) {
     verbose_log("encoded ResetInfo response: payload_len=%u max=%u causes=%u watchdog_tasks=%u backtrace=%u "
                 "reset_tasks=%u current_task_len=%u",
                 (unsigned)payload_len, (unsigned)USSP_GENERIC_RESETINFO_RESPONSE_MAX_SIZE,
-                (unsigned)response.causes_len, (unsigned)response.watchdog.blocking_tasks_len,
+                (unsigned)response.causes.len, (unsigned)response.watchdog.blocking_tasks.len,
                 (unsigned)response.assert_info.backtrace.len,
-                (unsigned)response.assert_info.state_at_reset.system_tasks_len,
+                (unsigned)response.assert_info.state_at_reset.system_tasks.len,
                 (unsigned)response.assert_info.state_at_reset.current_task.len);
     verbose_dump_bytes("encoded ResetInfo response payload", buffer, payload_len);
     return payload_len;
@@ -483,111 +399,124 @@ static void print_task_info(const char *prefix, uint8_t index, const ussp_generi
            (unsigned)task->task_stack_high_water, (unsigned)task->percentage_time_x100);
 }
 
-static void verbose_validate_u8_text_pointer(const char *field_name, const uint8_t *data, uint8_t len,
-                                             uint8_t max_len) {
-    if (!VERBOSE) {
-        return;
-    }
-
-    const uint8_t safe_len = clamp_u8_len(field_name, len, max_len);
-    if (len > 0U && !data) {
-        verbose_log("%s has len=%u but data is NULL", field_name, (unsigned)len);
-    } else if (data && !ptr_in_decode_scratch(data, safe_len)) {
-        verbose_log("%s points outside decode scratch: ptr=%p len=%u", field_name, (const void *)data,
-                    (unsigned)safe_len);
-    }
-}
-
 static void validate_decoded_response_pointers(const ussp_generic_ResetInfoResponse *response) {
     if (!VERBOSE) {
         return;
     }
 
-    const uint8_t causes_len = clamp_u8_len("causes.len", response->causes_len, RESETINFO_CAUSE_SLOT_COUNT);
-    for (uint8_t i = 0; i < causes_len; i++) {
-        const ussp_generic_ResetReason *reason = reset_info_cause_slot_const(response, i);
-        if (reason) {
-            verbose_validate_u8_text_pointer("causes.name", reason->name.data, reason->name.len,
-                                             USSP_GENERIC_RESETREASON_NAME_MAX_LENGTH);
+    const uint8_t causes_len =
+        clamp_u8_len("causes.len", response->causes.len, USSP_GENERIC_RESETINFO_RESPONSE_CAUSES_MAX_LENGTH);
+    const size_t causes_region_len = (size_t)causes_len * sizeof(response->causes.data[0]);
+    const bool causes_data_ok = response->causes.data && ptr_in_decode_scratch(response->causes.data, causes_region_len);
+    if (response->causes.data && !causes_data_ok) {
+        verbose_log("causes.data pointer is outside decode scratch: ptr=%p bytes=%lu",
+                    (const void *)response->causes.data, (unsigned long)causes_region_len);
+    }
+    for (uint8_t i = 0; causes_data_ok && i < causes_len; i++) {
+        const uint8_t name_len = clamp_u8_len("causes.name.len", response->causes.data[i].name.len,
+                                              USSP_GENERIC_RESETREASON_NAME_MAX_LENGTH);
+        if (ranges_overlap(response->causes.data, causes_region_len, response->causes.data[i].name.data, name_len)) {
+            verbose_log("possible generated decode overlap: causes struct array overlaps causes[%u].name.data", 
+                        (unsigned)i);
         }
     }
 
-    const uint8_t watchdog_len =
-        clamp_u8_len("watchdog.blocking_tasks.len", response->watchdog.blocking_tasks_len, WATCHDOG_TASK_SLOT_COUNT);
-    for (uint8_t i = 0; i < watchdog_len; i++) {
-        const ussp_generic_TaskInfo *task = watchdog_task_slot_const(&response->watchdog, i);
-        if (task) {
-            verbose_validate_u8_text_pointer("watchdog.task.name", task->name.data, task->name.len,
-                                             USSP_GENERIC_TASKINFO_NAME_MAX_LENGTH);
+    const uint8_t watchdog_len = clamp_u8_len("watchdog.blocking_tasks.len",
+                                              response->watchdog.blocking_tasks.len,
+                                              USSP_GENERIC_WATCHDOGMONITOR_BLOCKING_TASKS_MAX_LENGTH);
+    const size_t watchdog_region_len = (size_t)watchdog_len * sizeof(response->watchdog.blocking_tasks.data[0]);
+    const bool watchdog_data_ok = response->watchdog.blocking_tasks.data &&
+                                  ptr_in_decode_scratch(response->watchdog.blocking_tasks.data, watchdog_region_len);
+    if (response->watchdog.blocking_tasks.data && !watchdog_data_ok) {
+        verbose_log("watchdog.blocking_tasks.data pointer is outside decode scratch: ptr=%p bytes=%lu",
+                    (const void *)response->watchdog.blocking_tasks.data, (unsigned long)watchdog_region_len);
+    }
+    for (uint8_t i = 0; watchdog_data_ok && i < watchdog_len; i++) {
+        const uint8_t name_len = clamp_u8_len("watchdog.task.name.len",
+                                              response->watchdog.blocking_tasks.data[i].name.len,
+                                              USSP_GENERIC_TASKINFO_NAME_MAX_LENGTH);
+        if (ranges_overlap(response->watchdog.blocking_tasks.data, watchdog_region_len,
+                           response->watchdog.blocking_tasks.data[i].name.data, name_len)) {
+            verbose_log("possible generated decode overlap: watchdog task array overlaps task[%u].name.data",
+                        (unsigned)i);
         }
     }
 
     const uint8_t system_len = clamp_u8_len("state_at_reset.system_tasks.len",
-                                            response->assert_info.state_at_reset.system_tasks_len,
-                                            RESET_TASK_SLOT_COUNT);
-    for (uint8_t i = 0; i < system_len; i++) {
-        const ussp_generic_TaskInfo *task = reset_task_slot_const(&response->assert_info.state_at_reset, i);
-        if (task) {
-            verbose_validate_u8_text_pointer("state_at_reset.task.name", task->name.data, task->name.len,
-                                             USSP_GENERIC_TASKINFO_NAME_MAX_LENGTH);
+                                            response->assert_info.state_at_reset.system_tasks.len,
+                                            USSP_GENERIC_FREERTOSPS_SYSTEM_TASKS_MAX_LENGTH);
+    const size_t system_region_len = (size_t)system_len * sizeof(response->assert_info.state_at_reset.system_tasks.data[0]);
+    const bool system_data_ok = response->assert_info.state_at_reset.system_tasks.data &&
+                                ptr_in_decode_scratch(response->assert_info.state_at_reset.system_tasks.data,
+                                                      system_region_len);
+    if (response->assert_info.state_at_reset.system_tasks.data && !system_data_ok) {
+        verbose_log("state_at_reset.system_tasks.data pointer is outside decode scratch: ptr=%p bytes=%lu",
+                    (const void *)response->assert_info.state_at_reset.system_tasks.data,
+                    (unsigned long)system_region_len);
+    }
+    for (uint8_t i = 0; system_data_ok && i < system_len; i++) {
+        const uint8_t name_len = clamp_u8_len("state_at_reset.task.name.len",
+                                              response->assert_info.state_at_reset.system_tasks.data[i].name.len,
+                                              USSP_GENERIC_TASKINFO_NAME_MAX_LENGTH);
+        if (ranges_overlap(response->assert_info.state_at_reset.system_tasks.data, system_region_len,
+                           response->assert_info.state_at_reset.system_tasks.data[i].name.data, name_len)) {
+            verbose_log("possible generated decode overlap: state_at_reset task array overlaps task[%u].name.data",
+                        (unsigned)i);
         }
     }
-
-    const uint8_t backtrace_len =
-        clamp_u8_len("assert_info.backtrace.len", response->assert_info.backtrace.len,
-                     USSP_GENERIC_ASSERTINFO_BACKTRACE_MAX_LENGTH);
-    if (response->assert_info.backtrace.data &&
-        !ptr_in_decode_scratch(response->assert_info.backtrace.data,
-                               (size_t)backtrace_len * sizeof(response->assert_info.backtrace.data[0]))) {
-        verbose_log("assert_info.backtrace.data pointer is outside decode scratch: ptr=%p len=%u",
-                    (const void *)response->assert_info.backtrace.data, (unsigned)backtrace_len);
-    }
-    verbose_validate_u8_text_pointer("state_at_reset.current_task",
-                                     response->assert_info.state_at_reset.current_task.data,
-                                     response->assert_info.state_at_reset.current_task.len,
-                                     USSP_GENERIC_FREERTOSPS_CURRENT_TASK_MAX_LENGTH);
 }
 
 static void print_reset_info_response_summary(const ussp_generic_ResetInfoResponse *response) {
     validate_decoded_response_pointers(response);
 
-    const uint8_t causes_len = clamp_u8_len("causes.len", response->causes_len, RESETINFO_CAUSE_SLOT_COUNT);
-    const uint8_t watchdog_len =
-        clamp_u8_len("watchdog.blocking_tasks.len", response->watchdog.blocking_tasks_len, WATCHDOG_TASK_SLOT_COUNT);
+    const uint8_t causes_len =
+        clamp_u8_len("causes.len", response->causes.len, USSP_GENERIC_RESETINFO_RESPONSE_CAUSES_MAX_LENGTH);
+    const uint8_t watchdog_len = clamp_u8_len("watchdog.blocking_tasks.len", response->watchdog.blocking_tasks.len,
+                                              USSP_GENERIC_WATCHDOGMONITOR_BLOCKING_TASKS_MAX_LENGTH);
     const uint8_t backtrace_len =
         clamp_u8_len("assert_info.backtrace.len", response->assert_info.backtrace.len,
                      USSP_GENERIC_ASSERTINFO_BACKTRACE_MAX_LENGTH);
     const uint8_t system_tasks_len =
         clamp_u8_len("state_at_reset.system_tasks.len",
-                     response->assert_info.state_at_reset.system_tasks_len,
-                     RESET_TASK_SLOT_COUNT);
+                     response->assert_info.state_at_reset.system_tasks.len,
+                     USSP_GENERIC_FREERTOSPS_SYSTEM_TASKS_MAX_LENGTH);
+    const bool causes_data_ok = response->causes.data &&
+                                ptr_in_decode_scratch(response->causes.data,
+                                                      (size_t)causes_len * sizeof(response->causes.data[0]));
+    const bool watchdog_data_ok =
+        response->watchdog.blocking_tasks.data &&
+        ptr_in_decode_scratch(response->watchdog.blocking_tasks.data,
+                              (size_t)watchdog_len * sizeof(response->watchdog.blocking_tasks.data[0]));
     const bool backtrace_data_ok =
         response->assert_info.backtrace.data &&
         ptr_in_decode_scratch(response->assert_info.backtrace.data,
                               (size_t)backtrace_len * sizeof(response->assert_info.backtrace.data[0]));
+    const bool system_tasks_data_ok =
+        response->assert_info.state_at_reset.system_tasks.data &&
+        ptr_in_decode_scratch(response->assert_info.state_at_reset.system_tasks.data,
+                              (size_t)system_tasks_len *
+                                  sizeof(response->assert_info.state_at_reset.system_tasks.data[0]));
 
     printf("ResetInfo response detail:\n");
     printf("  success=%u\n", (unsigned)response->success);
-    printf("  causes.len=%u\n", (unsigned)response->causes_len);
-    for (uint8_t i = 0; i < causes_len; i++) {
-        const ussp_generic_ResetReason *reason = reset_info_cause_slot_const(response, i);
-        if (!reason) {
-            printf("  causes[%u]=<missing-slot>\n", (unsigned)i);
-            continue;
-        }
+    printf("  causes.len=%u\n", (unsigned)response->causes.len);
+    if (response->causes.data && !causes_data_ok) {
+        printf("  causes.data=<invalid-ptr:%p>\n", (const void *)response->causes.data);
+    }
+    for (uint8_t i = 0; causes_data_ok && i < causes_len; i++) {
         printf("  causes[%u].name=", (unsigned)i);
-        print_u8_text("causes.name", reason->name.data, reason->name.len, USSP_GENERIC_RESETREASON_NAME_MAX_LENGTH);
-        printf(" name_len=%u\n", (unsigned)reason->name.len);
+        print_u8_text("causes.name", response->causes.data[i].name.data, response->causes.data[i].name.len,
+                      USSP_GENERIC_RESETREASON_NAME_MAX_LENGTH);
+        printf(" name_len=%u\n", (unsigned)response->causes.data[i].name.len);
     }
 
-    printf("  watchdog.blocking_tasks.len=%u\n", (unsigned)response->watchdog.blocking_tasks_len);
-    for (uint8_t i = 0; i < watchdog_len; i++) {
-        const ussp_generic_TaskInfo *task = watchdog_task_slot_const(&response->watchdog, i);
-        if (!task) {
-            printf("  watchdog.blocking_tasks[%u]=<missing-slot>\n", (unsigned)i);
-            continue;
-        }
-        print_task_info("  watchdog.blocking_tasks", i, task);
+    printf("  watchdog.blocking_tasks.len=%u\n", (unsigned)response->watchdog.blocking_tasks.len);
+    if (response->watchdog.blocking_tasks.data && !watchdog_data_ok) {
+        printf("  watchdog.blocking_tasks.data=<invalid-ptr:%p>\n",
+               (const void *)response->watchdog.blocking_tasks.data);
+    }
+    for (uint8_t i = 0; watchdog_data_ok && i < watchdog_len; i++) {
+        print_task_info("  watchdog.blocking_tasks", i, &response->watchdog.blocking_tasks.data[i]);
     }
 
     printf("  assert_info.backtrace.len=%u\n", (unsigned)response->assert_info.backtrace.len);
@@ -612,14 +541,14 @@ static void print_reset_info_response_summary(const ussp_generic_ResetInfoRespon
     printf("  assert_info.valid_assert=%u\n", (unsigned)response->assert_info.valid_assert);
 
     printf("  assert_info.state_at_reset.system_tasks.len=%u\n",
-           (unsigned)response->assert_info.state_at_reset.system_tasks_len);
-    for (uint8_t i = 0; i < system_tasks_len; i++) {
-        const ussp_generic_TaskInfo *task = reset_task_slot_const(&response->assert_info.state_at_reset, i);
-        if (!task) {
-            printf("  assert_info.state_at_reset.system_tasks[%u]=<missing-slot>\n", (unsigned)i);
-            continue;
-        }
-        print_task_info("  assert_info.state_at_reset.system_tasks", i, task);
+           (unsigned)response->assert_info.state_at_reset.system_tasks.len);
+    if (response->assert_info.state_at_reset.system_tasks.data && !system_tasks_data_ok) {
+        printf("  assert_info.state_at_reset.system_tasks.data=<invalid-ptr:%p>\n",
+               (const void *)response->assert_info.state_at_reset.system_tasks.data);
+    }
+    for (uint8_t i = 0; system_tasks_data_ok && i < system_tasks_len; i++) {
+        print_task_info("  assert_info.state_at_reset.system_tasks", i,
+                        &response->assert_info.state_at_reset.system_tasks.data[i]);
     }
 
     printf("  assert_info.state_at_reset.current_task=");
