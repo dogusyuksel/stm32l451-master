@@ -1,0 +1,9 @@
+# Tasks
+TaskInfo[<=15] system_tasks
+uint8[<=16] current_task
+
+#State
+uint32 memory_free
+bool scheduler_running
+bool in_task
+uint8 num_tasks

@@ -27,6 +27,8 @@
 # define CANARD_MAYBE_UNUSED(x) x
 #endif
 
+uint8_t canard_dsdl_resetinfo_fix_enabled __attribute__((weak)) = 0U;
+
 <!--(macro generate_primary_body)--> #! type_name, service, max_bitlen, fields, constants, union, has_array, has_float16
 
  %if max_bitlen
@@ -99,7 +101,7 @@ uint32_t ${type_name}_encode_internal(${type_name}* source,
     for (c = 0; c < source->${'%s' % ((f.name + '.len'))}; c++)
     {
                 %if f.cpp_type_category == t.CATEGORY_COMPOUND:
-        offset += ${f.cpp_type}_encode_internal((void*)&source->${'%s' % ((f.name + '.data'))}[c], msg_buf, offset, 0);
+        offset = ${f.cpp_type}_encode_internal((void*)&source->${'%s' % ((f.name + '.data'))}[c], msg_buf, offset, 0);
                 %else
         canardEncodeScalar(msg_buf,
                            offset,
@@ -275,17 +277,25 @@ int32_t ${type_name}_decode_internal(
     if (dyn_arr_buf)
     {
         dest->${'%s' % ((f.name + '.data'))} = (${f.cpp_type}*)*dyn_arr_buf;
+                    %if f.cpp_type_category == t.CATEGORY_COMPOUND:
+        *dyn_arr_buf = (uint8_t*)(((${f.cpp_type}*)*dyn_arr_buf) + dest->${'%s' % ((f.name + '.len'))});
+                    %endif
     }
 
     for (c = 0; c < dest->${'%s' % ((f.name + '.len'))}; c++)
     {
                     %if f.cpp_type_category == t.CATEGORY_COMPOUND:
-        offset += ${f.cpp_type}_decode_internal(transfer,
-                                                0,
-                                                (void*)&dest->${'%s' % ((f.name + '.data'))}[c],
-                                                dyn_arr_buf,
-                                                offset,
-                                                tao);
+        offset = ${f.cpp_type}_decode_internal(transfer,
+                                               0,
+                                               (void*)&dest->${'%s' % ((f.name + '.data'))}[c],
+                                               dyn_arr_buf,
+                                               offset,
+                                               tao);
+        if (offset < 0)
+        {
+            ret = offset;
+            goto ${type_name}_error_exit;
+        }
                     %else
         if (dyn_arr_buf)
         {
@@ -298,7 +308,10 @@ int32_t ${type_name}_decode_internal(
             {
                 goto ${type_name}_error_exit;
             }
-            *dyn_arr_buf = (uint8_t*)(((${f.cpp_type}*)*dyn_arr_buf) + 1);
+            if (canard_dsdl_resetinfo_fix_enabled)
+            {
+                *dyn_arr_buf = (uint8_t*)(((${f.cpp_type}*)*dyn_arr_buf) + 1);
+            }
         }
         offset += ${f.bitlen};
                     %endif
@@ -323,7 +336,12 @@ int32_t ${type_name}_decode_internal(
         %elif f.type_category == t.CATEGORY_COMPOUND:
 
     // Compound
-    offset = ${f.cpp_type}_decode_internal(transfer, 0, (void*)&dest->${f.name}, dyn_arr_buf, offset, tao);
+    offset = ${f.cpp_type}_decode_internal(transfer,
+                                           canard_dsdl_resetinfo_fix_enabled ? 0 : payload_len,
+                                           (void*)&dest->${f.name},
+                                           dyn_arr_buf,
+                                           offset,
+                                           tao);
     if (offset < 0)
     {
         ret = offset;
