@@ -138,10 +138,10 @@ void board_periodic_task(void *argument) {
 
   /* Put the part is standby mode */
   extFlashPowerStandby();
-  osDelay(20);
+  osDelay(pdMS_TO_TICKS(20));
   /* Verify manufacturer and device ID */
   ExtFlash_readInfo();
-  osDelay(20);
+  osDelay(pdMS_TO_TICKS(20));
   // Put the part in low power mode
   extFlashPowerDown();
 

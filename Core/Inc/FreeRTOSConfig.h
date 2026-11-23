@@ -167,6 +167,8 @@ standard names. */
 /* Section where parameter definitions can be added (for instance, to override default ones in FreeRTOS.h) */
 #define INCLUDE_uxTaskGetStackHighWaterMark2 1
 #define INCLUDE_vTaskGetInfo 1
+#define configCHECK_FOR_STACK_OVERFLOW 2   /* calls vApplicationStackOverflowHook() (freertos.c) */
+#define configUSE_NEWLIB_REENTRANT 1       /* newlib sprintf/malloc are used from several tasks */
 /* USER CODE END Defines */
 
 #endif /* FREERTOS_CONFIG_H */
