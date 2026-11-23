@@ -91,6 +91,9 @@ int can_add_interface(uint16_t node_id, uint16_t netmask)
     csp_can_s * csp_can = &csp_can_ctx;
 
     csp_can->tx_sem = xSemaphoreCreateBinary();
+    if (csp_can->tx_sem == NULL) {
+        return 1;
+    }
     xSemaphoreGive(csp_can->tx_sem);
 
     csp_can->iface->interface_data = &csp_can->ifdata;
@@ -106,13 +109,18 @@ int can_add_interface(uint16_t node_id, uint16_t netmask)
     csp_rtable_set(node_id, CSP_NETMASK_MAX_NUMBER_OF_BITS, csp_can->iface, CSP_NO_VIA);
 
     csp_can->rx_queue = xQueueCreate(CSP_QUEUE_LENGTH, sizeof(csp_can_msg_s));
-    xTaskCreate(csp_can_rx_thread, "csp_rx_thread", RX_THREAD_TASK_DEPTH, &csp_can_ctx, 3, NULL);
+    if (csp_can->rx_queue == NULL) {
+        return 1;
+    }
+    if (xTaskCreate(csp_can_rx_thread, "csp_rx_thread", RX_THREAD_TASK_DEPTH, &csp_can_ctx, 3, NULL) != pdPASS) {
+        return 1;
+    }
 
     return 0;
 }
 
 static void csp_can_rx_frame_cb(uint32_t addr, uint8_t *data, uint8_t len) {
-    int task_woken = pdTRUE;
+    int task_woken = pdFALSE;
     if (len > 8) {
         return;
     }
@@ -133,7 +141,7 @@ static void csp_can_rx_frame_cb(uint32_t addr, uint8_t *data, uint8_t len) {
 
 static void csp_can_tx_frame_cb(void) {
 
-    BaseType_t task_woken = 1;
+    BaseType_t task_woken = pdFALSE;
     xSemaphoreGiveFromISR(csp_can_ctx.tx_sem, &task_woken);
     portYIELD_FROM_ISR (task_woken);
 }

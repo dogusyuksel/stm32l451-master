@@ -11,8 +11,8 @@
 #include "cmsis_os.h"
 
 static uint8_t uart_buffer[UART_RX_BUFFER_SIZE];
-static uint32_t uart_buffer_index = 0;
-static uint32_t last_data_tick = 0;
+static volatile uint32_t uart_buffer_index = 0; /* written by the UART ISR, read/reset by the task */
+static volatile uint32_t last_data_tick = 0;
 
 static uint8_t buffer_contains(const uint8_t *buffer, uint32_t buffer_len,
                                const char *needle) {

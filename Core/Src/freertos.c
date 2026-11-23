@@ -68,7 +68,7 @@ const osThreadAttr_t periodicTask_attributes = {
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName);
 /* USER CODE END FunctionPrototypes */
 
 void StartPeriodicTask(void *argument);
@@ -142,6 +142,11 @@ void StartPeriodicTask(void *argument)
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
+{
+  (void)xTask;
+  (void)pcTaskName; /* name of the overflowing task: inspect it in the debugger */
+  Error_Handler();
+}
 /* USER CODE END Application */
 

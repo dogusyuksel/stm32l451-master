@@ -263,7 +263,7 @@ void receiveCanard(void) {
 
 void spinCanard(void) {
   static uint32_t spin_time = 0;
-  if (osKernelGetTickCount() < (spin_time + CANARD_SPIN_PERIOD)) {
+  if ((uint32_t)(osKernelGetTickCount() - spin_time) < CANARD_SPIN_PERIOD) {
     return; // rate limiting
   }
   spin_time = osKernelGetTickCount();
